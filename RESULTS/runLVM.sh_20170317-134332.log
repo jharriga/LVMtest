@@ -1,8 +1,0 @@
-2017/03/17:13:43:32: runLVM.sh - Created logfile: ./RESULTS/runLVM.sh_20170317-134332.log
-2017/03/17:13:43:32: Key variable values:
-2017/03/17:13:43:32: > slowDEV=/dev/sdb - fastDEV=/dev/nvme0n1
-2017/03/17:13:43:32: > fastSZ=12G - fastLV=lv_fast - fastVG=vg_fast
-2017/03/17:13:43:32: > slowSZ=100G - slowLV=lv_slow - slowVG=vg_slow
-2017/03/17:13:43:32: > slowLVPATH=/dev/vg_slow/lv_slow - fastLVPATH=/dev/vg_fast/lv_fast
-2017/03/17:13:43:32: > slowSCRATCH=/mnt/slowdev/fio_scratch - fastSCRATCH=/mnt/fastdev/fio_scratch
-2017/03/17:13:43:32: ---------------------------------
