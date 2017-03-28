@@ -1,0 +1,236 @@
+2017/03/16:16:32:03: runLVM.sh - Created logfile: ./RESULTS/runLVM.sh_20170316-163203.log
+2017/03/16:16:32:03: Key variable values:
+2017/03/16:16:32:03: > slowDEV=/dev/sdc - fastDEV=/dev/sdd
+2017/03/16:16:32:03: > fastSZ=20G - fastLV=lv_fast - fastVG=vg_fast
+2017/03/16:16:32:03: > slowSZ=100G - slowLV=lv_slow - slowVG=vg_slow
+2017/03/16:16:32:03: > slowLVPATH=/dev/vg_slow/lv_slow - fastLVPATH=/dev/vg_fast/lv_fast
+2017/03/16:16:32:03: ---------------------------------
+2017/03/16:16:32:03: Checking if /dev/sdc is in use, if yes abort
+2017/03/16:16:32:03: Preparing /dev/sdc device partitions
+Welcome to fdisk (util-linux 2.23.2).
+
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+
+Command (m for help): 
+Command (m for help): Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): Partition number (1-4, default 1): First sector (2048-240121727, default 2048): Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-240121727, default 240121727): Using default value 240121727
+Partition 1 of type Linux and of size 114.5 GiB is set
+
+Command (m for help): The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+2017/03/16:16:32:03: Removing parition: dev=/dev/sdc - partition=1
+2017/03/16:16:32:03: Checking if /dev/sdd is in use, if yes abort
+2017/03/16:16:32:03: Preparing /dev/sdd device partitions
+Welcome to fdisk (util-linux 2.23.2).
+
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+
+Command (m for help): 
+Command (m for help): Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): Partition number (1-4, default 1): First sector (2048-117231407, default 2048): Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-117231407, default 117231407): Using default value 117231407
+Partition 1 of type Linux and of size 55.9 GiB is set
+
+Command (m for help): The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+2017/03/16:16:32:04: Removing parition: dev=/dev/sdd - partition=1
+2017/03/16:16:32:04: Device checks complete - continuing...
+2017/03/16:16:32:04: Starting: LVM SETUP
+  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices         
+  home    rhel_ml110 -wi-ao----  90.17g                                                     /dev/sda2(2016) 
+  root    rhel_ml110 -wi-ao----  50.00g                                                     /dev/sda2(25099)
+  swap    rhel_ml110 -wi-ao----   7.88g                                                     /dev/sda2(0)    
+  lv_fast vg_fast    -wi-ao----  20.00g                                                     /dev/sdd(0)     
+  lv_slow vg_slow    -wi-a----- 100.00g                                                     /dev/sdc(0)     
+Filesystem                  1K-blocks    Used Available Use% Mounted on
+/dev/mapper/rhel_ml110-root  52403200 4640552  47762648   9% /
+devtmpfs                      3985584       0   3985584   0% /dev
+tmpfs                         4001112      84   4001028   1% /dev/shm
+tmpfs                         4001112    9080   3992032   1% /run
+tmpfs                         4001112       0   4001112   0% /sys/fs/cgroup
+/dev/sda1                     1038336  231872    806464  23% /boot
+/dev/mapper/rhel_ml110-home  94501804   49884  94451920   1% /home
+tmpfs                          800224      16    800208   1% /run/user/42
+tmpfs                          800224       0    800224   0% /run/user/0
+/dev/mapper/vg_slow-lv_slow 104806400   32944 104773456   1% /mnt/slowdev
+/dev/mapper/vg_fast-lv_fast  20961280   32944  20928336   1% /mnt/fastdev
+2017/03/16:16:32:08: Completed: LVM SETUP
+2017/03/16:16:32:08: Starting: LVM Device TESTING
+2017/03/16:16:32:08: RUNNING size 1G with blocksize 4096k: /dev/vg_slow/lv_slow
+slow_1G_4096k: (g=0): rw=randrw, bs=4M-4M/4M-4M/4M-4M, ioengine=sync, iodepth=1
+fio-2.2.8
+Starting 1 process
+
+slow_1G_4096k: (groupid=0, jobs=1): err= 0: pid=8141: Thu Mar 16 16:32:29 2017
+  read : io=860160KB, bw=42807KB/s, iops=10, runt= 20094msec
+    clat (msec): min=69, max=161, avg=87.16, stdev=20.77
+     lat (msec): min=69, max=161, avg=87.16, stdev=20.77
+    clat percentiles (msec):
+     |  1.00th=[   71],  5.00th=[   74], 10.00th=[   74], 20.00th=[   76],
+     | 30.00th=[   76], 40.00th=[   78], 50.00th=[   80], 60.00th=[   81],
+     | 70.00th=[   82], 80.00th=[   85], 90.00th=[  128], 95.00th=[  135],
+     | 99.00th=[  141], 99.50th=[  143], 99.90th=[  161], 99.95th=[  161],
+     | 99.99th=[  161]
+    bw (KB  /s): min=24429, max=53592, per=100.00%, avg=42823.06, stdev=6604.88
+  write: io=188416KB, bw=9376.8KB/s, iops=2, runt= 20094msec
+    clat (msec): min=35, max=61, avg=38.75, stdev= 5.39
+     lat (msec): min=35, max=61, avg=38.82, stdev= 5.39
+    clat percentiles (usec):
+     |  1.00th=[35584],  5.00th=[35584], 10.00th=[35584], 20.00th=[36096],
+     | 30.00th=[36096], 40.00th=[36608], 50.00th=[36608], 60.00th=[37632],
+     | 70.00th=[38656], 80.00th=[39680], 90.00th=[43264], 95.00th=[43776],
+     | 99.00th=[61696], 99.50th=[61696], 99.90th=[61696], 99.95th=[61696],
+     | 99.99th=[61696]
+    bw (KB  /s): min= 6595, max=40715, per=100.00%, avg=11696.48, stdev=7882.15
+    lat (msec) : 50=17.19%, 100=67.97%, 250=14.84%
+  cpu          : usr=0.04%, sys=0.64%, ctx=260, majf=0, minf=30
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued    : total=r=210/w=46/d=0, short=r=0/w=0/d=0, drop=r=0/w=0/d=0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: io=860160KB, aggrb=42806KB/s, minb=42806KB/s, maxb=42806KB/s, mint=20094msec, maxt=20094msec
+  WRITE: io=188416KB, aggrb=9376KB/s, minb=9376KB/s, maxb=9376KB/s, mint=20094msec, maxt=20094msec
+2017/03/16:16:32:30: /dev/vg_slow/lv_slow complete.
+0	/dev/vg_slow/lv_slow
+2017/03/16:16:32:30: -----------------------
+2017/03/16:16:32:30: RUNNING size 1G with blocksize 4096k: /dev/vg_fast/lv_fast
+fast_1G_4096k: (g=0): rw=randrw, bs=4M-4M/4M-4M/4M-4M, ioengine=sync, iodepth=1
+fio-2.2.8
+Starting 1 process
+
+fast_1G_4096k: (groupid=0, jobs=1): err= 0: pid=8162: Thu Mar 16 16:32:37 2017
+  read : io=860160KB, bw=144759KB/s, iops=35, runt=  5942msec
+    clat (msec): min=17, max=33, avg=20.97, stdev= 4.10
+     lat (msec): min=17, max=33, avg=20.97, stdev= 4.10
+    clat percentiles (usec):
+     |  1.00th=[17792],  5.00th=[17792], 10.00th=[17792], 20.00th=[18048],
+     | 30.00th=[18048], 40.00th=[20096], 50.00th=[20096], 60.00th=[20096],
+     | 70.00th=[20096], 80.00th=[20352], 90.00th=[28288], 95.00th=[30080],
+     | 99.00th=[33024], 99.50th=[33024], 99.90th=[33024], 99.95th=[33024],
+     | 99.99th=[33024]
+    bw (KB  /s): min=110489, max=178086, per=100.00%, avg=145138.73, stdev=19212.29
+  write: io=188416KB, bw=31709KB/s, iops=7, runt=  5942msec
+    clat (msec): min=30, max=56, avg=33.31, stdev= 5.33
+     lat (msec): min=30, max=56, avg=33.38, stdev= 5.33
+    clat percentiles (usec):
+     |  1.00th=[30592],  5.00th=[30592], 10.00th=[30592], 20.00th=[30592],
+     | 30.00th=[30592], 40.00th=[30592], 50.00th=[30592], 60.00th=[30848],
+     | 70.00th=[33024], 80.00th=[33536], 90.00th=[40192], 95.00th=[40192],
+     | 99.00th=[56576], 99.50th=[56576], 99.90th=[56576], 99.95th=[56576],
+     | 99.99th=[56576]
+    bw (KB  /s): min=16189, max=47352, per=100.00%, avg=31864.55, stdev=9282.03
+    lat (msec) : 20=30.86%, 50=68.75%, 100=0.39%
+  cpu          : usr=0.12%, sys=1.94%, ctx=260, majf=0, minf=31
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued    : total=r=210/w=46/d=0, short=r=0/w=0/d=0, drop=r=0/w=0/d=0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: io=860160KB, aggrb=144759KB/s, minb=144759KB/s, maxb=144759KB/s, mint=5942msec, maxt=5942msec
+  WRITE: io=188416KB, aggrb=31709KB/s, minb=31709KB/s, maxb=31709KB/s, mint=5942msec, maxt=5942msec
+2017/03/16:16:32:37: /dev/vg_fast/lv_fast complete.
+0	/dev/vg_fast/lv_fast
+2017/03/16:16:32:37: -----------------------
+2017/03/16:16:32:37: RUNNING size 10G with blocksize 4096k: /dev/vg_slow/lv_slow
+slow_10G_4096k: (g=0): rw=randrw, bs=4M-4M/4M-4M/4M-4M, ioengine=sync, iodepth=1
+fio-2.2.8
+Starting 1 process
+
+slow_10G_4096k: (groupid=0, jobs=1): err= 0: pid=8183: Thu Mar 16 16:36:08 2017
+  read : io=8380.0MB, bw=40905KB/s, iops=9, runt=209784msec
+    clat (msec): min=64, max=258, avg=91.19, stdev=24.15
+     lat (msec): min=64, max=258, avg=91.19, stdev=24.15
+    clat percentiles (msec):
+     |  1.00th=[   70],  5.00th=[   76], 10.00th=[   76], 20.00th=[   79],
+     | 30.00th=[   80], 40.00th=[   81], 50.00th=[   82], 60.00th=[   83],
+     | 70.00th=[   85], 80.00th=[   96], 90.00th=[  137], 95.00th=[  143],
+     | 99.00th=[  167], 99.50th=[  178], 99.90th=[  229], 99.95th=[  233],
+     | 99.99th=[  260]
+    bw (KB  /s): min=20013, max=53194, per=100.00%, avg=40912.14, stdev=7030.57
+  write: io=1860.0MB, bw=9079.6KB/s, iops=2, runt=209784msec
+    clat (msec): min=34, max=102, avg=40.13, stdev=10.30
+     lat (msec): min=34, max=102, avg=40.29, stdev=10.30
+    clat percentiles (msec):
+     |  1.00th=[   35],  5.00th=[   36], 10.00th=[   36], 20.00th=[   36],
+     | 30.00th=[   36], 40.00th=[   37], 50.00th=[   38], 60.00th=[   39],
+     | 70.00th=[   39], 80.00th=[   41], 90.00th=[   44], 95.00th=[   71],
+     | 99.00th=[   85], 99.50th=[   86], 99.90th=[  102], 99.95th=[  102],
+     | 99.99th=[  102]
+    bw (KB  /s): min= 6460, max=32768, per=100.00%, avg=11897.43, stdev=5733.95
+    lat (msec) : 50=16.99%, 100=68.05%, 250=14.92%, 500=0.04%
+  cpu          : usr=0.04%, sys=0.62%, ctx=2571, majf=0, minf=34
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued    : total=r=2095/w=465/d=0, short=r=0/w=0/d=0, drop=r=0/w=0/d=0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: io=8380.0MB, aggrb=40904KB/s, minb=40904KB/s, maxb=40904KB/s, mint=209784msec, maxt=209784msec
+  WRITE: io=1860.0MB, aggrb=9079KB/s, minb=9079KB/s, maxb=9079KB/s, mint=209784msec, maxt=209784msec
+2017/03/16:16:36:08: /dev/vg_slow/lv_slow complete.
+0	/dev/vg_slow/lv_slow
+2017/03/16:16:36:08: -----------------------
+2017/03/16:16:36:08: RUNNING size 10G with blocksize 4096k: /dev/vg_fast/lv_fast
+fast_10G_4096k: (g=0): rw=randrw, bs=4M-4M/4M-4M/4M-4M, ioengine=sync, iodepth=1
+fio-2.2.8
+Starting 1 process
+
+fast_10G_4096k: (groupid=0, jobs=1): err= 0: pid=8238: Thu Mar 16 16:37:08 2017
+  read : io=8380.0MB, bw=146004KB/s, iops=35, runt= 58773msec
+    clat (msec): min=16, max=165, avg=20.76, stdev= 5.83
+     lat (msec): min=16, max=165, avg=20.76, stdev= 5.83
+    clat percentiles (msec):
+     |  1.00th=[   17],  5.00th=[   18], 10.00th=[   18], 20.00th=[   18],
+     | 30.00th=[   20], 40.00th=[   20], 50.00th=[   20], 60.00th=[   20],
+     | 70.00th=[   20], 80.00th=[   20], 90.00th=[   30], 95.00th=[   30],
+     | 99.00th=[   42], 99.50th=[   42], 99.90th=[   42], 99.95th=[   52],
+     | 99.99th=[  165]
+    bw (KB  /s): min=93801, max=213498, per=100.00%, avg=146045.75, stdev=24847.60
+  write: io=1860.0MB, bw=32407KB/s, iops=7, runt= 58773msec
+    clat (msec): min=30, max=46, avg=32.70, stdev= 4.03
+     lat (msec): min=30, max=46, avg=32.86, stdev= 4.03
+    clat percentiles (usec):
+     |  1.00th=[30592],  5.00th=[30592], 10.00th=[30592], 20.00th=[30592],
+     | 30.00th=[30592], 40.00th=[30592], 50.00th=[30592], 60.00th=[30592],
+     | 70.00th=[30592], 80.00th=[33024], 90.00th=[40192], 95.00th=[40192],
+     | 99.00th=[45824], 99.50th=[45824], 99.90th=[45824], 99.95th=[45824],
+     | 99.99th=[45824]
+    bw (KB  /s): min= 8015, max=57229, per=100.00%, avg=32762.77, stdev=11106.00
+    lat (msec) : 20=66.91%, 50=33.01%, 100=0.04%, 250=0.04%
+  cpu          : usr=0.14%, sys=2.02%, ctx=2567, majf=0, minf=32
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued    : total=r=2095/w=465/d=0, short=r=0/w=0/d=0, drop=r=0/w=0/d=0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: io=8380.0MB, aggrb=146004KB/s, minb=146004KB/s, maxb=146004KB/s, mint=58773msec, maxt=58773msec
+  WRITE: io=1860.0MB, aggrb=32406KB/s, minb=32406KB/s, maxb=32406KB/s, mint=58773msec, maxt=58773msec
+2017/03/16:16:37:08: /dev/vg_fast/lv_fast complete.
+0	/dev/vg_fast/lv_fast
+2017/03/16:16:37:08: -----------------------
+2017/03/16:16:37:08: Completed: LVM Device TESTING
+2017/03/16:16:37:08: Starting: LVM TEARDOWN
+2017/03/16:16:37:09: Completed: LVM TEARDOWN
+2017/03/16:16:37:09: END runLVM.sh**********************
+2017/03/16:16:37:09: runLVM.sh - Closed logfile: ./RESULTS/runLVM.sh_20170316-163203.log

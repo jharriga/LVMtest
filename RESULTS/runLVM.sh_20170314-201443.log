@@ -1,0 +1,7 @@
+2017/03/14:20:14:43: runLVM.sh - Created logfile: ./RESULTS/runLVM.sh_20170314-201443.log
+2017/03/14:20:14:43: Key variable values:
+2017/03/14:20:14:43: > slowDEV=/dev/sdb - fastDEV=/dev/nvme0n1
+2017/03/14:20:14:43: > fastSZ=20G - fastLV=lv_fast - fastVG=vg_fast
+2017/03/14:20:14:43: > slowSZ=200G - slowLV=lv_slow - slowVG=vg_slow
+2017/03/14:20:14:43: ---------------------------------
+2017/03/14:20:14:43: Volume Group vg_slow exists - ABORTING Test!
