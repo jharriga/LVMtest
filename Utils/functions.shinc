@@ -28,9 +28,11 @@ function fio_bw_rw()
     file=$1
     # unit:KB/S
 #    bw_read=`grep "bw=" "$file" | grep read | awk -F[=,B]+ '{if(match($4, /[0-9]+K$/)) {printf("%d", substr($4, 0, length($4)-1));} else {printf("%d", int($4)/1024)}}'`
-    bw_read=`grep "bw=" "$file" | grep read | awk -F[=,B]+ '{printf("%d", $4)}'`
+    bw_read=`grep "bw=" "$file" | grep read | \
+      awk -F[=,s]+ '{printf("%s%s", $4, "s")}'`
 #    bw_write=`grep "bw=" "$file" | grep write | awk -F[=,B]+ '{if(match($4, /[0-9]+K$/)) {printf("%d", substr($4, 0, length($4)-1));} else {printf("%d", int($4)/1024)}}'`
-    bw_write=`grep "bw=" "$file" | grep write | awk -F[=,B]+ '{printf("%d", $4)}'`
+    bw_write=`grep "bw=" "$file" | grep write | \
+      awk -F[=,s]+ '{printf("%s%s", $4, "s")}'`
     bw_rw_read="$bw_read"
     bw_rw_write="$bw_write"
 }
@@ -66,12 +68,12 @@ function fio_print()
   fio_lat_rw $fio_output
 
 # print the strings
-  echo -n "> READ: [bw] ${bw_rw_read} KB/s"| tee -a $LOGFILE
-  echo -n "  -  [lat] ${lat_rw_read} ms" | tee -a $LOGFILE
-  echo    "  -  [iops] ${iops_rw_read}" | tee -a $LOGFILE
-  echo -n "> WRITE: [bw] ${bw_rw_write} KB/s" | tee -a $LOGFILE
-  echo -n "  -  [lat] ${lat_rw_write} ms" | tee -a $LOGFILE
-  echo    "  -  [iops] ${iops_rw_write}" | tee -a $LOGFILE
+  echo -n "> READ: [bw] ${bw_rw_read}"     | tee -a $LOGFILE
+  echo -n "  -  [iops] ${iops_rw_read}"    | tee -a $LOGFILE
+  echo "  -  [avg lat] ${lat_rw_read} ms"  | tee -a $LOGFILE
+  echo -n "> WRITE: [bw] ${bw_rw_write}"   | tee -a $LOGFILE
+  echo -n "  -  [iops] ${iops_rw_write}"   | tee -a $LOGFILE
+  echo "  -  [avg lat] ${lat_rw_write} ms" | tee -a $LOGFILE
 
 }
 
