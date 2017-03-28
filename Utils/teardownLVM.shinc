@@ -1,0 +1,37 @@
+#-------------------------------------
+# TEARDOWN_LVM.sh
+# Tears-down the LVM configuration
+#
+# Test if mounted before issuing umount
+rootID=$(stat -c%d /)
+if [ -d "$fastMNT" ]; then
+  fastID=$(stat -c%d "${fastMNT}")
+  if (( rootID == fastID )); then
+    updatelog "${fastMNT} not mounted - skip umount"
+  else
+    umount ${fastMNT} || error_exit "$LINENO: Unable to umount ${fastMNT}"
+  fi
+fi
+
+if [ -d "$slowMNT" ]; then
+  slowID=$(stat -c%d "${slowMNT}")
+  if (( rootID == slowID )); then
+    updatelog "${slowMNT} not mounted - skip umount"
+  else
+    umount ${slowMNT} || error_exit "$LINENO: Unable to umount ${slowMNT}"
+  fi
+fi
+
+lvremove --force ${fastLVPATH} || \
+  error_exit "$LINENO: Unable to lvremove ${fastLVPATH}"
+lvremove --force ${slowLVPATH} || \
+  error_exit "$LINENO: Unable to lvremove ${slowLVPATH}"
+vgremove --force ${fastVG} || \
+  error_exit "$LINENO: Unable to vgremove ${fastVG}"
+vgremove --force ${slowVG} || \
+  error_exit "$LINENO: Unable to vgremove ${slowVG}"
+pvremove --force --yes ${fastDEV} || \
+  error_exit "$LINENO: Unable to pvremove ${fastDEV}"
+pvremove --force --yes ${slowDEV} || \
+  error_exit "$LINENO: Unable to pvremove ${slowDEV}"
+

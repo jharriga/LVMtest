@@ -1,0 +1,159 @@
+#----------------------------------------
+# START GLOBAL VARIABLES
+#
+# List of dependencies - verfied by 'chk_dependencies' function
+DEPENDENCIES_arr=(
+  "fio"                  # I/O workload genarator
+  "parted" "fdisk"       # partition tools
+  "pvs" "lvs" "pvcreate" "vgcreate" "lvcreate"  # LVM utils
+)
+
+# SLOW device vars
+slowDEV=/dev/sdb
+#slowDEV=/dev/sdc
+slowVG="vg_slow"
+slowLV="lv_slow"
+slowLVPATH="/dev/${slowVG}/${slowLV}"
+slowMNT="/mnt/slowdev"
+slowSCRATCH="${slowMNT}/fio_scratch"
+
+# FAST device vars
+#fastDEV=/dev/sdd
+fastDEV=/dev/nvme0n1
+fastVG="vg_fast"
+fastLV="lv_fast"
+fastLVPATH="/dev/${fastVG}/${fastLV}"
+fastMNT="/mnt/fastdev"
+fastSCRATCH="${fastMNT}/fio_scratch"
+
+# LVMcache vars
+cacheVG="vg_cache"
+cacheLV="lv_cache"
+cachemetaLV="lv_cache_meta"
+cachedLV="lv_cached"
+cachedLVPATH="/dev/${cacheVG}/${cachedLV}"
+cachedMNT="/mnt/lvmcached"
+cachedSCRATCH="${cachedMNT}/fio_scratch"
+cachePOLICY="smq"
+cacheMODE="writethrough"
+
+# 
+# Calculate the SIZEs, all based on unitSZ and cache_size values
+# cache_size sets the LVMcache_data size
+unitSZ="G"
+let cache_size=10
+
+# Size of the Cache
+#  sets fastDEV size for lvcreate in Utils/setupLVM.shinc
+#  sets LVMcache_data size for lvconvert in Utils/setupCACHE.shinc
+cacheSZ="$cache_size$unitSZ"
+
+# Calculate percentages used to roundup/down sizes
+ten_percent=$(($cache_size / 10))
+twenty_percent=$(($ten_percent * 2))
+# Remember - bash only supports integer arithmetic
+# exit if the roundups are not integers
+if [ $ten_percent -lt 1 ]; then
+  echo "Math error in vars.shinc - var 'ten_percent' must be integer >= 1"
+  exit 1
+fi
+
+## Continue defining the 'SZ' vars used by the scripts
+#
+
+# runLVM.sh Variables ---------------------
+#
+# Size of the fastDEV used by lvcreate in Utils/setupLVM.shinc
+#   roundup by 20%
+fast_calc=$(($cache_size + $twenty_percent))
+fastSZ="$fast_calc$unitSZ"
+#
+# Size of the slowDEV used by lvcreate in Utils/setupLVM.shinc
+#   ten times size of cache
+slow_calc=$(($cache_size * 10))
+slowSZ="$slow_calc$unitSZ"
+#
+# Array of sizes used by fio in runLVM.sh
+#   one tenth of cache size
+#   cache size
+lvm1_calc=$(($cache_size / 10))
+lvm2_calc=$cache_size
+lvmSize1="$lvm1_calc$unitSZ"; lvmSize2="$lvm2_calc$unitSZ"
+LVMsize_arr=("${lvmSize1}" "${lvmSize2}")
+#
+# Size of scratch file created by fio in runLVM.sh
+#   equal to cache size plus 10%
+# NOTE: must be less than 'fast_calc'
+scratchLVM_calc=$(($cache_size + $ten_percent))
+scratchLVM_SZ="$scratchLVM_calc$unitSZ"
+
+# runCACHE.sh Variables ---------------------
+#
+# LVMcache_metadata size is one tenth size of LVMcache_data
+#   used by lvconvert in Utils/setupCACHE.shinc
+metadata_calc=$(($cache_size / 10))
+metadataSZ="$metadata_calc$unitSZ"
+#
+# Size of the origin lvm device used by lvcreate in Utils/setupCACHE.shinc
+originSZ="${slowSZ}"
+#
+# Array of sizes used by fio in runCACHE.sh
+# Three size scenarios:
+#   Cache size less 20%
+#   Double the cache size
+#   Cache size less 20%
+cache1_calc=$(($cache_size - $twenty_percent))
+cache2_calc=$(($cache_size * 2))
+cacheSize1="$cache1_calc$unitSZ"; cacheSize2="$cache2_calc$unitSZ"
+CACHEsize_arr=("${cacheSize1}" "${cacheSize2}" "${cacheSize1}")
+#
+# Size of scratch file created by fio in runCACHE.sh
+scratchCACHE_calc=$(($cache2_calc + $twenty_percent))
+scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
+
+#
+## DEBUG
+echo "runLVM.sh vars:"
+echo "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
+echo "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
+echo "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
+echo "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
+echo "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
+echo "> scratchLVM_SZ=${scratchLVM_SZ}"
+echo "runCACHE.sh vars:"
+echo "> cacheSZ=${cacheSZ} metadataSZ=${metadataSZ} originSZ=${originSZ}"
+echo "> cachedSCRATCH=${cachedSCRATCH}"
+echo "> scratchCACHE_SZ=${scratchCACHE_SZ}"
+#exit
+
+# FIO Variables
+BLOCKsize_arr=("4k" "64k" "4M")
+#bs="4M"
+iod="16"
+percentRD="80"
+# runtime and ramptime are only used by runCACHE.sh
+runtime="300"
+ramptime="300"
+
+# Results strings used in 'fio_*' functions
+bw_rw_read=""
+iops_rw_read=""
+lat_rw_read=""
+bw_rw_write=""
+iops_rw_write=""
+lat_rw_write=""
+
+# timestamp logfile
+ts="$(date +%Y%m%d-%H%M%S)"
+# Name of the program being run
+PROGNAME=$(basename $0)
+# LOGFILE - records steps
+RESULTSDIR="./RESULTS"
+LOGFILE="${RESULTSDIR}/${PROGNAME}_${ts}.log"
+# logfile date format, customize it to your wishes
+# see man date for help
+DATE='date +%Y/%m/%d:%H:%M:%S'
+
+# END GLOBAL VARIABLES
+#--------------------------------------
+

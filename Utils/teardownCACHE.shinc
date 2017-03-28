@@ -1,0 +1,29 @@
+#-------------------------------------
+# TEARDOWN_CACHE.sh
+# Tears-down the LVM-CACHE configuration
+#
+# Test if mounted before issuing umount
+if [ -d "$cachedMNT" ]; then
+  rootID=$(stat -c%d /)
+  cacheID=$(stat -c%d "${cachedMNT}")
+  if (( rootID == cacheID )); then
+    updatelog "${cacheMNT} not mounted - skip umount"
+  else
+    umount ${cachedMNT} || error_exit "$LINENO: Unable to umount ${cacheMNT}"
+  fi
+fi
+
+# Remove the cached LV
+lvremove --force ${cachedLVPATH} || \
+  error_exit "$LINENO: Unable to lvremove ${cachedLVPATH}"
+
+# Remove the VG
+vgremove --force ${cacheVG} || \
+  error_exit "$LINENO: Unable to vgremove ${cacheVG}"
+
+# Remove the PVs
+pvremove --force --yes ${fastDEV} || \
+  error_exit "$LINENO: Unable to pvremove ${fastDEV}"
+pvremove --force --yes ${slowDEV} || \
+  error_exit "$LINENO: Unable to pvremove ${slowDEV}"
+

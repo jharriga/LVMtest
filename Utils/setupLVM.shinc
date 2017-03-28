@@ -1,0 +1,54 @@
+#----------------------------------
+# SETUP_LVM
+#
+# Step 1: create two Volume Groups (fast and slow)
+pvcreate --yes ${slowDEV} || \
+  error_exit "$LINENO: Unable to pvcreate ${slowDEV}."
+pvcreate --yes ${fastDEV} || \
+  error_exit "$LINENO: Unable to pvcreate ${fastDEV}."
+vgcreate --yes ${slowVG} ${slowDEV} || \
+  error_exit "$LINENO: Unable to vgcreate ${slowVG}."
+vgcreate --yes ${fastVG} ${fastDEV} || \
+  error_exit "$LINENO: Unable to vgcreate ${fastVG}."
+
+# Step 2: create two Logical Volumes (fast and slow)
+yes | lvcreate --size ${slowSZ} -n ${slowLV} ${slowVG} ${slowDEV} || \
+  error_exit "$LINENO: Unable to lvcreate ${slowLV}"
+yes | lvcreate --size ${fastSZ} -n ${fastLV} ${fastVG} ${fastDEV} || \
+  error_exit "$LINENO: Unable to lvcreate ${fastLV}"
+
+# Step 3: list LVM device configuration
+lvs -a -o +devices 2>&1 | tee -a $LOGFILE
+
+# Step 4: mkfs and mount cmds for both VGs
+# Using mkfs & mount syntax to match RHCS OSD procedures
+# slowLVPATH
+yes | mkfs.xfs -f -i size=2048 -q ${slowLVPATH} || \
+  error_exit "$LINENO: Unable to mkfs.xfs ${slowLVPATH}"
+if [ ! -d ${slowMNT} ]; then
+  mkdir ${slowMNT} || error_exit "$LINENO: Unable to mkdir ${slowMNT}"
+fi
+mount -t xfs -o rw,noatime,inode64 ${slowLVPATH} ${slowMNT} || \
+  error_exit "$LINENO: Unable to mount ${slowMNT}"
+
+# fastLVPATH
+yes | mkfs.xfs -f -i size=2048 -q ${fastLVPATH} || \
+  error_exit "$LINENO: Unable to mkfs.xfs ${fastLVPATH}"
+if [ ! -d ${fastMNT} ]; then
+  mkdir ${fastMNT} || error_exit "$LINENO: Unable to mkdir ${fastMNT}"
+fi
+mount -t xfs -o rw,noatime,inode64 ${fastLVPATH} ${fastMNT} || \
+  error_exit "$LINENO: Unable to mount ${fastMNT}"
+
+# Step 5: list mounted filesystems
+df 2>&1 | tee -a $LOGFILE
+
+# Verify filesystems are properly created and mounted
+touch ${slowSCRATCH} || \
+  error_exit "$LINENO: Unable to create file ${slowSCRATCH}"
+rm -f ${slowSCRATCH}
+
+touch ${fastSCRATCH} || \
+  error_exit "$LINENO: Unable to create dir ${fastSCRATCH}"
+rm -f ${fastSCRATCH}
+
