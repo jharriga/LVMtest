@@ -28,9 +28,10 @@ fastSCRATCH="${fastMNT}/fio_scratch"
 
 # LVMcache vars
 cacheVG="vg_cache"
-cacheLV="lv_cache"
+cachedataLV="lv_cache_data"
 cachemetaLV="lv_cache_meta"
 cachedLV="lv_cached"
+originLV="${cachedLV}"
 cachedLVPATH="/dev/${cacheVG}/${cachedLV}"
 cachedMNT="/mnt/lvmcached"
 cachedSCRATCH="${cachedMNT}/fio_scratch"

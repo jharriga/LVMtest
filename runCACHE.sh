@@ -1,6 +1,12 @@
 #!/bin/bash
 #----------------------------------------------------------------
-# runCAHE.sh - test lvmCache performance
+# runCACHE.sh - test lvmCache performance
+#
+# DEPENDENCIES: (must be in search path)
+#   I/O workload generator: fio
+#   partition tools: fdisk, parted
+#   LVM utils: pvs, pvcreate, vgcreate, lvcreate, lvs
+#   FS utils: mkfs.xfs
 #
 # COMPONENTS:
 #   Cached logical volume (/dev/<vg>/<lv>), built from:
@@ -24,6 +30,7 @@ if [[ ! -d "$myPath" ]]; then
 fi
 # Variables
 source "$myPath/vars.shinc"
+
 # Functions
 source "$myPath/Utils/functions.shinc"
 
@@ -37,9 +44,9 @@ updatelog "${PROGNAME} - Created logfile: $LOGFILE"
 updatelog "Key variable values:"
 updatelog "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
 updatelog "> cacheSZ=${cacheSZ} - cacheMODE=${cacheMODE}"
-updatelog "> cacheLV=${cacheLV} - cacheVG=${cacheVG}"
 updatelog "> metadataSZ=${metadataSZ} - metadataLV=${metadataLV}"
 updatelog "> originSZ=${originSZ} - cachedLV=${originLV}"
+updatelog "> cachedLVPATH=${cachedLVPATH} - cachedMNT=${cachedMNT}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
@@ -105,25 +112,46 @@ updatelog "Starting: LVM CACHE Device TESTING"
 #  2) warmup the cache (ramp_time)
 #  3) measure the throughput (run_time)
 
-# SKIP - Cleanup the FIO dir
-#  if [ -d ${cachedFIO} ]; then
-#    rm -rf ${cachedFIO} || error_exit "$LINENO: Unable to remove ${cachedFIO}"
-#  fi
-#  mkdir ${cachedFIO} || \
-#    error_exit "$LINENO: Unable to create dir ${cachedFIO}"
 
 # Write the test area/file with random 4M blocks
-  updatelog "Writing ${scratchSZ} scratch area to ${cachedLVPATH}..."
-  fio --size=${scratchSZ} --blocksize=${bs} --refill_buffers=1 \
-  --rw=write --ioengine=libaio --iodepth=8 \
-  --filename=${cachedLVPATH} --group_reporting \
-  --name=scratch >> $LOGFILE
+updatelog "Writing ${scratchCACHE_SZ} scratch area to ${cachedLVPATH}..."
+fio --size=${scratchCACHE_SZ} --blocksize=4M --rw=write \
+  --ioengine=libaio --iodepth=${iod} --direct=1 \
+  --refill_buffers --fsync_on_close=1 \
+  --filename=${cachedSCRATCH} --group_reporting \
+  --name=scratch_cache > /dev/null 2>&1
+dusize1=$(du -k "${cachedSCRATCH}" | cut -f 1)
+if [[ $dusize1 -lt 1 ]]; then
+  updatelog "FAILURE in writing ${cachedSCRATCH}"
+  updatelog "Starting: LVM CACHE TEARDOWN"
+  source "$myPath/Utils/teardownCACHE.shinc"
+  updatelog "Completed: LVM CACHE TEARDOWN"
+  exit 1
+fi
+updatelog "${cachedSCRATCH} is $dusize1 KB"
 
-# FILESIZE FOR LOOP
-for fs in "${CACHEsize_arr[@]}"; do
+updatelog "COMPLETED: Writing the scratch file"
+
+updatelog "Starting: LVM CACHE Device TESTING"
+
+#####
+# Main for loops for executing FIO tests
+# Note that the FIO output files get over-written on every run
+#   but the output is logged in $LOGFILE
+# Summary information is added to $LOGFILE by 'fio_print' function 
 #
-# Run the test on the dev
-  updatelog "RUNNING size ${fs} with blocksize ${bs}: ${cachedLVPATH}"
+# Size FOR loop
+for size in "${CACHEsize_arr[@]}"; do
+#
+# BlockSize FOR loop
+  for bs in "${BLOCKsize_arr[@]}"; do
+#
+# Run the test on the CACHED scratch area
+    cachedOUT="${RESULTSDIR}/cached_${size}_${bs}.fio"
+    if [ -e $cachedOUT ]; then
+      rm -f $cachedOUT
+    fi
+    updatelog "RUNNING size ${size} with blocksize ${bs}: ${cachedSCRATCH}"
 
 # Warmup the cache (ramp_time) and measure the performance (run_time)
 # Previous measurements indicate these throughput rates for our
@@ -134,17 +162,25 @@ for fs in "${CACHEsize_arr[@]}"; do
 #   4k bs - fastDEV (20 * 26s)=520s   slowDEV (20 * 590s)= 11800s
 #   4M bs - fastDEV (20 * 6s)=120s    slowDEV (20 * 19s)= 380s
 #
-  sync; echo 3 > /proc/sys/vm/drop_caches
-  updatelog "Warming up the cache and measuring performance..."
-  fio --filesize=${fs} --blocksize=${bs} --end_fsync=1 --direct=1 \
-    --time_based --runtime=${runtime} --ramp_time=${ramptime} \
+    sync; echo 3 > /proc/sys/vm/drop_caches
+    updatelog "Warming up the cache and measuring performance..."
+    fio --filesize=${size} --blocksize=${bs} \
     --rw=randrw --rwmixread=${percentRD} --random_distribution=zipf:1.2 \
-    --group_reporting --overwrite=0 --filename=${cachedLVPATH} \
-    --name=cached_${size}_${bs} >> $LOGFILE
-  updatelog "Measurements of ${cachedLVPATH} complete."
-  du -s ${cachedLVPATH} >> $LOGFILE
-  updatelog "-----------------------------------"
-
+    --ioengine=libaio --iodepth=${iod} --direct=1 \
+    --overwrite=0 --fsync_on_close=1 \
+    --time_based --runtime=${runtime} --ramp_time=${ramptime} \
+    --filename=${cachedSCRATCH} --group_reporting \
+    --name=cached_${size}_${bs} --output=${cachedOUT} >> $LOGFILE
+    if [ ! -e $cachedOUT ]; then
+      error_exit "fio failed ${cachedSCRATCH}"
+    fi
+    updatelog "COMPLETED: Testing ${slowSCRATCH}"
+    updatelog "SUMMARY size ${size} with blocksize ${bs}: ${cachedSCRATCH}"
+    fio_print $cachedOUT
+    echo "FIO output:" >> $LOGFILE
+    cat ${cachedOUT} >> $LOGFILE
+    updatelog "-----------------------"
+  done
 done
 
 updatelog "Completed: LVM CACHE TESTING"

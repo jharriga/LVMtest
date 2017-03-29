@@ -3,8 +3,8 @@
 # Tears-down the LVM-CACHE configuration
 #
 # Test if mounted before issuing umount
+rootID=$(stat -c%d /)
 if [ -d "$cachedMNT" ]; then
-  rootID=$(stat -c%d /)
   cacheID=$(stat -c%d "${cachedMNT}")
   if (( rootID == cacheID )); then
     updatelog "${cacheMNT} not mounted - skip umount"
