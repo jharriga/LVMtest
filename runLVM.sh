@@ -54,6 +54,8 @@ updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
 updatelog "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
 updatelog "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
 updatelog "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
+updatelog "FIO variable settings:"
+updatelog "> iodepth=${iod} - read%=${percentRD}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
@@ -167,7 +169,8 @@ for size in "${LVMsize_arr[@]}"; do
     if [ -e $slowOUT ]; then
       rm -f $slowOUT
     fi
-    updatelog "RUNNING size ${size} with blocksize ${bs}: ${slowSCRATCH}"
+    updatelog "RUNNING size ${size}, blocksize ${bs}, \
+      iodepth ${iod}: ${slowSCRATCH}"
 
     sync; echo 3 > /proc/sys/vm/drop_caches
     fio --size=${size} --blocksize=${bs} \

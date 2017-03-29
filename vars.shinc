@@ -114,17 +114,17 @@ scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 
 #
 ## DEBUG
-echo "runLVM.sh vars:"
-echo "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
-echo "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
-echo "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
-echo "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
-echo "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
-echo "> scratchLVM_SZ=${scratchLVM_SZ}"
-echo "runCACHE.sh vars:"
-echo "> cacheSZ=${cacheSZ} metadataSZ=${metadataSZ} originSZ=${originSZ}"
-echo "> cachedSCRATCH=${cachedSCRATCH}"
-echo "> scratchCACHE_SZ=${scratchCACHE_SZ}"
+#echo "runLVM.sh vars:"
+#echo "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
+#echo "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
+#echo "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
+#echo "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
+#echo "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
+#echo "> scratchLVM_SZ=${scratchLVM_SZ}"
+#echo "runCACHE.sh vars:"
+#echo "> cacheSZ=${cacheSZ} metadataSZ=${metadataSZ} originSZ=${originSZ}"
+#echo "> cachedSCRATCH=${cachedSCRATCH}"
+#echo "> scratchCACHE_SZ=${scratchCACHE_SZ}"
 #exit
 
 # FIO Variables
