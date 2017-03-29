@@ -23,6 +23,13 @@ function chk_dependencies {
   done
 }
 
+function fio_runt_rw() 
+{
+    file=$1
+    runt_read=`grep "runt=" "$file" | grep read | awk -F[=,]+ '{print $8}'`
+    runtime_rw="$runt_read"
+}
+
 function fio_bw_rw() 
 {
     file=$1
@@ -63,11 +70,13 @@ function fio_print()
 {
   fio_output=$1
 # grep the FIO output file and fill the strings
+  fio_runt_rw $fio_output
   fio_bw_rw $fio_output
   fio_iops_rw $fio_output
   fio_lat_rw $fio_output
 
 # print the strings
+  echo "> RUNTIME: [runt] ${runtime_rw}"   | tee -a $LOGFILE
   echo -n "> READ: [bw] ${bw_rw_read}"     | tee -a $LOGFILE
   echo -n "  -  [iops] ${iops_rw_read}"    | tee -a $LOGFILE
   echo "  -  [avg lat] ${lat_rw_read} ms"  | tee -a $LOGFILE
