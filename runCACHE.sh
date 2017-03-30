@@ -12,8 +12,8 @@
 #   Cached logical volume (/dev/<vg>/<lv>), built from:
 #     * Origin logical volume (slowDEV)
 #     * Cache logical volume (fastDEV)
-#       > Cache data logical volume
-#       > Cache metadata logical volume
+#       > Cache data logical volume (cachedataLV)
+#       > Cache metadata logical volume (cachemetaLV)
 #
 # CONFIGURATION:
 #   HDD = slowDEV = /dev/sdX (WD320G /dev/sdb)
@@ -44,9 +44,12 @@ updatelog "${PROGNAME} - Created logfile: $LOGFILE"
 updatelog "Key variable values:"
 updatelog "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
 updatelog "> cacheSZ=${cacheSZ} - cacheMODE=${cacheMODE}"
-updatelog "> metadataSZ=${metadataSZ} - metadataLV=${metadataLV}"
+updatelog "> metadataSZ=${metadataSZ} - metadataLV=${cachemetaLV}"
 updatelog "> originSZ=${originSZ} - cachedLV=${originLV}"
 updatelog "> cachedLVPATH=${cachedLVPATH} - cachedMNT=${cachedMNT}"
+updatelog "FIO variable settings:"
+updatelog "> iodepth=${iod} - read%=${percentRD}"
+updatelog "> runtime=${runtime} - ramptime=${ramptime}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
@@ -114,7 +117,7 @@ updatelog "Starting: LVM CACHE Device TESTING"
 
 
 # Write the test area/file with random 4M blocks
-updatelog "Writing ${scratchCACHE_SZ} scratch area to ${cachedLVPATH}..."
+updatelog "Writing ${scratchCACHE_SZ} scratch file to ${cachedSCRATCH}..."
 fio --size=${scratchCACHE_SZ} --blocksize=4M --rw=write \
   --ioengine=libaio --iodepth=${iod} --direct=1 \
   --refill_buffers --fsync_on_close=1 \
@@ -151,14 +154,14 @@ for size in "${CACHEsize_arr[@]}"; do
     if [ -e $cachedOUT ]; then
       rm -f $cachedOUT
     fi
-    updatelog "RUNNING size ${size} with blocksize ${bs}: ${cachedSCRATCH}"
+    updatelog "RUNNING filesize ${size} with blocksize ${bs}: ${cachedSCRATCH}"
 
 # Warmup the cache (ramp_time) and measure the performance (run_time)
 # Previous measurements indicate these throughput rates for our
 # devices (randomReadWrites 80/20 mix):
 #   4k bs - fastDEV = 26s/GB  slowDEV = 590s/GB  PerfRatio of 22.7:1
 #   4M bs - fastDEV =  6s/GB  slowDEV = 19s/GB   PerfRatio of  3.2:1
-# To cover 20GB scratch area once
+# To cover 20GB scratch file once
 #   4k bs - fastDEV (20 * 26s)=520s   slowDEV (20 * 590s)= 11800s
 #   4M bs - fastDEV (20 * 6s)=120s    slowDEV (20 * 19s)= 380s
 #
@@ -174,8 +177,8 @@ for size in "${CACHEsize_arr[@]}"; do
     if [ ! -e $cachedOUT ]; then
       error_exit "fio failed ${cachedSCRATCH}"
     fi
-    updatelog "COMPLETED: Testing ${slowSCRATCH}"
-    updatelog "SUMMARY size ${size} with blocksize ${bs}: ${cachedSCRATCH}"
+    updatelog "COMPLETED: Testing ${cachedSCRATCH}"
+    updatelog "SUMMARY filesize ${size} with blocksize ${bs}: ${cachedSCRATCH}"
     fio_print $cachedOUT
     echo "FIO output:" >> $LOGFILE
     cat ${cachedOUT} >> $LOGFILE
