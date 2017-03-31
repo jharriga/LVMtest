@@ -100,16 +100,18 @@ originSZ="${slowSZ}"
 #
 # Array of sizes used by fio in runCACHE.sh
 # Three size scenarios:
-#   Cache size less 20%
-#   Double the cache size
-#   Cache size less 20%
+#   cacheSize1=Cache size less 20%
+#   cacheSize2=ten times cacheSize1
+#   cacheSize1=Cache size less 20%
 cache1_calc=$(($cache_size - $twenty_percent))
-cache2_calc=$(($cache_size * 2))
+#cache2_calc=$(($cache_size * 2))
+cache2_calc=$(($cache_size * 10))
 cacheSize1="$cache1_calc$unitSZ"; cacheSize2="$cache2_calc$unitSZ"
 CACHEsize_arr=("${cacheSize1}" "${cacheSize2}" "${cacheSize1}")
 #
 # Size of scratch file created by fio in runCACHE.sh
-scratchCACHE_calc=$(($cache2_calc + $twenty_percent))
+# pad it a bit so we don't overrun the end
+scratchCACHE_calc=$(($cache2_calc + $cache1_calc))
 scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 
 #
@@ -128,12 +130,12 @@ scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 #exit
 
 # FIO Variables
-BLOCKsize_arr=("4k" "64k" "4M")
+BLOCKsize_arr=("64k" "4M")
 #bs="4M"
 iod="16"
 percentRD="80"
 # runtime and ramptime are only used by runCACHE.sh
-runtime="300"
+runtime="600"
 ramptime="300"
 
 # Results strings used in 'fio_*' functions

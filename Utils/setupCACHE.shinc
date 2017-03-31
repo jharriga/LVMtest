@@ -42,6 +42,11 @@ lvconvert --yes --force --type cache --cachepool ${cache} ${origin} || \
 # Step 7: list LVM devices
 lvs -a -o +devices 2>&1 | tee -a $LOGFILE
 
+# Step7a: list LVMcache settings
+lvs -o+cache_mode ${origin} 2>&1 | tee -a $LOGFILE
+lvs -o+chunksize ${origin} 2>&1 | tee -a $LOGFILE
+lvs -o+cache_policy,cache_settings ${origin} 2>&1 | tee -a $LOGFILE
+
 # Step 8: mkfs and mount cmds for cachedLV
 # Using mkfs & mount syntax to match RHCS OSD procedures
 yes | mkfs.xfs -f -i size=2048 -q ${cachedLVPATH} || \

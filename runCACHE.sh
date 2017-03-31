@@ -168,7 +168,7 @@ for size in "${CACHEsize_arr[@]}"; do
     sync; echo 3 > /proc/sys/vm/drop_caches
     updatelog "Warming up the cache and measuring performance..."
     fio --filesize=${size} --blocksize=${bs} \
-    --rw=randrw --rwmixread=${percentRD} --random_distribution=zipf:1.2 \
+    --rw=randrw --rwmixread=${percentRD} --random_distribution=zipf:0.8 \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
     --time_based --runtime=${runtime} --ramp_time=${ramptime} \
