@@ -143,11 +143,16 @@ updatelog "Starting: LVM CACHE Device TESTING"
 #   but the output is logged in $LOGFILE
 # Summary information is added to $LOGFILE by 'fio_print' function 
 #
-# Size FOR loop
-for size in "${CACHEsize_arr[@]}"; do
-#
 # BlockSize FOR loop
-  for bs in "${BLOCKsize_arr[@]}"; do
+for bs in "${BLOCKsize_arr[@]}"; do
+#
+# Clear the inode and dentry caches
+# With directIO this should not matter
+  updatelog "*****************************************"
+  sync; echo 3 > /proc/sys/vm/drop_caches
+#
+# FileSize FOR loop
+  for size in "${CACHEsize_arr[@]}"; do
 #
 # Run the test on the CACHED scratch area
     cachedOUT="${RESULTSDIR}/cached_${size}_${bs}.fio"
@@ -157,18 +162,10 @@ for size in "${CACHEsize_arr[@]}"; do
     updatelog "RUNNING filesize ${size} with blocksize ${bs}: ${cachedSCRATCH}"
 
 # Warmup the cache (ramp_time) and measure the performance (run_time)
-# Previous measurements indicate these throughput rates for our
-# devices (randomReadWrites 80/20 mix):
-#   4k bs - fastDEV = 26s/GB  slowDEV = 590s/GB  PerfRatio of 22.7:1
-#   4M bs - fastDEV =  6s/GB  slowDEV = 19s/GB   PerfRatio of  3.2:1
-# To cover 20GB scratch file once
-#   4k bs - fastDEV (20 * 26s)=520s   slowDEV (20 * 590s)= 11800s
-#   4M bs - fastDEV (20 * 6s)=120s    slowDEV (20 * 19s)= 380s
 #
-    sync; echo 3 > /proc/sys/vm/drop_caches
     updatelog "Warming up the cache and measuring performance..."
     fio --filesize=${size} --blocksize=${bs} \
-    --rw=randrw --rwmixread=${percentRD} --random_distribution=zipf:0.8 \
+    --rw=randrw --rwmixread=${percentRD} --random_distribution=random \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
     --time_based --runtime=${runtime} --ramp_time=${ramptime} \
@@ -184,6 +181,7 @@ for size in "${CACHEsize_arr[@]}"; do
     cat ${cachedOUT} >> $LOGFILE
     updatelog "-----------------------"
   done
+  updatelog "*****************************************"
 done
 
 updatelog "Completed: LVM CACHE TESTING"
