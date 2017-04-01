@@ -50,6 +50,7 @@ updatelog "> cachedLVPATH=${cachedLVPATH} - cachedMNT=${cachedMNT}"
 updatelog "FIO variable settings:"
 updatelog "> iodepth=${iod} - read%=${percentRD}"
 updatelog "> runtime=${runtime} - ramptime=${ramptime}"
+updatelog "> random_distribution=${randDIST}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
@@ -165,7 +166,7 @@ for bs in "${BLOCKsize_arr[@]}"; do
 #
     updatelog "Warming up the cache and measuring performance..."
     fio --filesize=${size} --blocksize=${bs} \
-    --rw=randrw --rwmixread=${percentRD} --random_distribution=random \
+    --rw=randrw --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
     --time_based --runtime=${runtime} --ramp_time=${ramptime} \
