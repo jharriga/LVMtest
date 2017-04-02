@@ -37,6 +37,10 @@ source "$myPath/Utils/functions.shinc"
 #--------------------------------------
 # Housekeeping
 # Create log file - named in vars.shinc
+if [ ! -d $RESULTSDIR ]; then
+  mkdir -p $RESULTSDIR || \
+    error_exit "$LINENO: Unable to create RESULTSDIR."
+fi
 touch $LOGFILE || error_exit "$LINENO: Unable to create LOGFILE."
 updatelog "${PROGNAME} - Created logfile: $LOGFILE"
 
