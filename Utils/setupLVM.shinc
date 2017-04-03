@@ -20,35 +20,37 @@ yes | lvcreate --size ${fastSZ} -n ${fastLV} ${fastVG} ${fastDEV} || \
 # Step 3: list LVM device configuration
 lvs -a -o +devices 2>&1 | tee -a $LOGFILE
 
+# If accessTYPE is 'lvmblock' then all done
+# If accessTYPE is 'lvmxfs' then 'mkfs' and 'mount'
+if [ "$accessTYPE" = "lvmxfs" ]; then
 # Step 4: mkfs and mount cmds for both VGs
 # Using mkfs & mount syntax to match RHCS OSD procedures
 # slowLVPATH
-yes | mkfs.xfs -f -i size=2048 -q ${slowLVPATH} || \
-  error_exit "$LINENO: Unable to mkfs.xfs ${slowLVPATH}"
-if [ ! -d ${slowMNT} ]; then
-  mkdir ${slowMNT} || error_exit "$LINENO: Unable to mkdir ${slowMNT}"
-fi
-mount -t xfs -o rw,noatime,inode64 ${slowLVPATH} ${slowMNT} || \
-  error_exit "$LINENO: Unable to mount ${slowMNT}"
+  yes | mkfs.xfs -f -i size=2048 -q ${slowLVPATH} || \
+    error_exit "$LINENO: Unable to mkfs.xfs ${slowLVPATH}"
+  if [ ! -d ${slowMNT} ]; then
+    mkdir ${slowMNT} || error_exit "$LINENO: Unable to mkdir ${slowMNT}"
+  fi
+  mount -t xfs -o rw,noatime,inode64 ${slowLVPATH} ${slowMNT} || \
+    error_exit "$LINENO: Unable to mount ${slowMNT}"
 
 # fastLVPATH
-yes | mkfs.xfs -f -i size=2048 -q ${fastLVPATH} || \
-  error_exit "$LINENO: Unable to mkfs.xfs ${fastLVPATH}"
-if [ ! -d ${fastMNT} ]; then
-  mkdir ${fastMNT} || error_exit "$LINENO: Unable to mkdir ${fastMNT}"
-fi
-mount -t xfs -o rw,noatime,inode64 ${fastLVPATH} ${fastMNT} || \
-  error_exit "$LINENO: Unable to mount ${fastMNT}"
-
-# Step 5: list mounted filesystems
-df 2>&1 | tee -a $LOGFILE
+  yes | mkfs.xfs -f -i size=2048 -q ${fastLVPATH} || \
+    error_exit "$LINENO: Unable to mkfs.xfs ${fastLVPATH}"
+  if [ ! -d ${fastMNT} ]; then
+    mkdir ${fastMNT} || error_exit "$LINENO: Unable to mkdir ${fastMNT}"
+  fi
+  mount -t xfs -o rw,noatime,inode64 ${fastLVPATH} ${fastMNT} || \
+    error_exit "$LINENO: Unable to mount ${fastMNT}"
 
 # Verify filesystems are properly created and mounted
-touch ${slowSCRATCH} || \
-  error_exit "$LINENO: Unable to create file ${slowSCRATCH}"
-rm -f ${slowSCRATCH}
+  touch ${slowSCRATCH} || \
+    error_exit "$LINENO: Unable to create file ${slowSCRATCH}"
+  rm -f ${slowSCRATCH}
 
-touch ${fastSCRATCH} || \
-  error_exit "$LINENO: Unable to create dir ${fastSCRATCH}"
-rm -f ${fastSCRATCH}
-
+  touch ${fastSCRATCH} || \
+    error_exit "$LINENO: Unable to create dir ${fastSCRATCH}"
+  rm -f ${fastSCRATCH}
+fi
+# 
+# END setupLVM.sh

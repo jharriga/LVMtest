@@ -8,6 +8,12 @@ DEPENDENCIES_arr=(
   "pvs" "lvs" "pvcreate" "vgcreate" "lvcreate"  # LVM utils
 )
 
+# Access Type for testing: lvmblock or lvmxfs
+# determines location of 'SCRATCH' file 
+#   > e.g. slowLVPATH for lvmblock or slowMNT for lvmxfs
+# used in setup/teardown routines
+accessTYPE="lvmblock"
+
 # SLOW device vars
 slowDEV=/dev/sdb
 #slowDEV=/dev/sdc
@@ -15,7 +21,6 @@ slowVG="vg_slow"
 slowLV="lv_slow"
 slowLVPATH="/dev/${slowVG}/${slowLV}"
 slowMNT="/mnt/slowdev"
-slowSCRATCH="${slowMNT}/fio_scratch"
 
 # FAST device vars
 #fastDEV=/dev/sdd
@@ -24,7 +29,6 @@ fastVG="vg_fast"
 fastLV="lv_fast"
 fastLVPATH="/dev/${fastVG}/${fastLV}"
 fastMNT="/mnt/fastdev"
-fastSCRATCH="${fastMNT}/fio_scratch"
 
 # LVMcache vars
 cacheVG="vg_cache"
@@ -34,9 +38,22 @@ cachedLV="lv_cached"
 originLV="${cachedLV}"
 cachedLVPATH="/dev/${cacheVG}/${cachedLV}"
 cachedMNT="/mnt/lvmcached"
-cachedSCRATCH="${cachedMNT}/fio_scratch"
 cachePOLICY="smq"
 cacheMODE="writethrough"
+
+# set the SCRATCH location based on accessTYPE
+if [ "$accessTYPE" = "lvmblock" ]; then
+  slowSCRATCH=$slowLVPATH
+  fastSCRATCH=$fastLVPATH
+  cachedSCRATCH=$cachedLVPATH
+elif [ "$accessTYPE" = "lvmxfs" ]; then
+  slowSCRATCH="${slowMNT}/fio_scratch"
+  fastSCRATCH="${fastMNT}/fio_scratch"
+  cachedSCRATCH="${cachedMNT}/fio_scratch"
+else
+  echo "Fatal error: invalid value for 'accessTYPE' in vars.shinc file"
+  exit 1
+fi
 
 # 
 # Calculate the SIZEs, all based on unitSZ and cache_size values
@@ -115,18 +132,20 @@ scratchCACHE_calc=$(($cache2_calc + $cache1_calc))
 scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 
 # FIO Variables
-BLOCKsize_arr=("4k" "64k" "4M")
-#bs="4M"
+fioOP="randrw"
+percentRD="100"
+#BLOCKsize_arr=("4k" "64k" "4M")
+BLOCKsize_arr=("4M")
 iod="16"
-percentRD="80"
 # runtime and ramptime are only used by runCACHE.sh
 runtime="600"
 ramptime="600"
 # randDIST is only used by runCACHE.sh
 # valid values are 'random' (fio default) or 'zipf:<theta>'
 # For 'zipf', use the fio/t/fio_genzip tool to visualize the distribution
-# Example: <theta> of 0.8 distributes ~50% of hits within 10% of buckets 
-randDIST="random"
+# Example: <theta> of 0.8 distributes ~50% of hits within 10% of SCRATCH 
+#randDIST="random"
+randDIST="zipf:0.8"
 
 # Results strings used in 'fio_*' functions
 bw_rw_read=""

@@ -45,7 +45,8 @@ updatelog "Key variable values:"
 updatelog "> fastDEV=${fastDEV}"
 updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
 updatelog "> fastLVPATH=${fastLVPATH}"
-updatelog "> fastSCRATCH=${fastSCRATCH}"
+updatelog "> accessTYPE=${accessTYPE} fastSCRATCH=${fastSCRATCH}"
+updatelog "> randDIST=${randDIST} percentRD=${percentRD}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
@@ -113,15 +114,18 @@ fio --filesize=${scratchLVM_SZ} --blocksize=4M --rw=write \
   --refill_buffers --fsync_on_close=1 \
   --filename=${fastSCRATCH} --group_reporting \
   --name=scratch_fast > /dev/null 2>&1
-dusize2=$(du -k "${fastSCRATCH}" | cut -f 1)
-if [[ $dusize2 -lt 1 ]]; then
-  updatelog "FAILURE in writing ${fastSCRATCH}"
-  updatelog "Starting: LVM TEARDOWN"
-  source "$myPath/Utils/teardownLVM.shinc"
-  updatelog "Completed: LVM TEARDOWN"
-  exit 1
+# Test SCRATCH file size depending on accessTYPE
+if [ "$accessTYPE" = "lvmxfs" ]; then
+  dusize2=$(du -k "${fastSCRATCH}" | cut -f 1)
+  if [[ $dusize2 -lt 1 ]]; then
+    updatelog "FAILURE in writing ${fastSCRATCH}"
+    updatelog "Starting: LVM TEARDOWN"
+    source "$myPath/Utils/teardownLVM.shinc"
+    updatelog "Completed: LVM TEARDOWN"
+    exit 1
+  fi
+  updatelog "${fastSCRATCH} is $dusize2 KB"
 fi
-updatelog "${fastSCRATCH} is $dusize2 KB"
 
 updatelog "COMPLETED: Writing the scratch file"
 
@@ -138,7 +142,7 @@ updatelog "Starting: NVME Device TESTING"
 #       values defined in vars.shinc file
 #
 size="10G"
-IODEPTH_arr=( "8" "16" "24" "32" "64" "128" )
+IODEPTH_arr=( "8" "16" "32" "16" )
 # iod FOR loop
 for iod in "${IODEPTH_arr[@]}"; do
 #
@@ -151,11 +155,12 @@ for iod in "${IODEPTH_arr[@]}"; do
     if [ -e $fastOUT ]; then
       rm -f $fastOUT
     fi
+    updatelog "*************************"
     updatelog "RUNNING iodepth ${iod} with blocksize ${bs}: ${fastSCRATCH}"
 
     sync; echo 3 > /proc/sys/vm/drop_caches
     fio --size=${size} --blocksize=${bs} \
-    --rw=randrw --rwmixread=${percentRD} --random_distribution=zipf:1.2 \
+    --rw=${fioOP} --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
     --filename=${fastSCRATCH} --group_reporting \
@@ -168,7 +173,7 @@ for iod in "${IODEPTH_arr[@]}"; do
     fio_print $fastOUT
     echo "FIO output:" >> $LOGFILE
     cat ${fastOUT} >> $LOGFILE
-    updatelog "-----------------------"
+    updatelog "*************************"
   done
 done
 
