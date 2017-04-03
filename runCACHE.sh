@@ -138,10 +138,7 @@ updatelog "Starting: LVM CACHE Device TESTING"
 # BlockSize FOR loop
 for bs in "${BLOCKsize_arr[@]}"; do
 #
-# Clear the inode and dentry caches
-# With directIO this should not matter
   updatelog "*****************************************"
-  sync; echo 3 > /proc/sys/vm/drop_caches
 #
 # FileSize FOR loop
   for size in "${CACHEsize_arr[@]}"; do
@@ -152,6 +149,10 @@ for bs in "${BLOCKsize_arr[@]}"; do
       rm -f $cachedOUT
     fi
     updatelog "RUNNING filesize ${size} with blocksize ${bs}: ${cachedSCRATCH}"
+
+# Clear the inode and dentry caches
+# With directIO this should not matter
+  sync; echo 3 > /proc/sys/vm/drop_caches
 
 # Warmup the cache (ramp_time) and measure the performance (run_time)
 #
