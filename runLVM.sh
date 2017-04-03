@@ -56,7 +56,8 @@ updatelog "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
 updatelog "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
 updatelog "> accessTYPE=${accessTYPE}"
 updatelog "FIO variable settings:"
-updatelog "> iodepth=${iod} - read%=${percentRD}"
+updatelog "> fioOP=${fioOP} - read%=${percentRD}"
+updatelog "> randDIST=${randDIST} iodepth=${iod}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
@@ -151,7 +152,7 @@ for size in "${LVMsize_arr[@]}"; do
 
     sync; echo 3 > /proc/sys/vm/drop_caches
     fio --size=${size} --blocksize=${bs} \
-    --rw=randrw --rwmixread=${percentRD} --random_distribution=zipf:1.2 \
+    --rw=${fioOP} --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
     --filename=${slowSCRATCH} --group_reporting \

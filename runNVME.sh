@@ -46,8 +46,11 @@ updatelog "> fastDEV=${fastDEV}"
 updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
 updatelog "> fastLVPATH=${fastLVPATH}"
 updatelog "> fastSCRATCH=${fastSCRATCH}"
-updatelog "> randDIST=${randDIST} percentRD=${percentRD}"
 updatelog "> accessTYPE=${accessTYPE}"
+updatelog "FIO variable settings:"
+updatelog "> fioOP=${fioOP} - read%=${percentRD}"
+updatelog "> randDIST=${randDIST} iodepth=${iod}"
+updatelog "> runtime=${runtime} - ramptime=${ramptime}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
