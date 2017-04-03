@@ -47,21 +47,25 @@ lvs -o+cache_mode ${origin} 2>&1 | tee -a $LOGFILE
 lvs -o+chunksize ${origin} 2>&1 | tee -a $LOGFILE
 lvs -o+cache_policy,cache_settings ${origin} 2>&1 | tee -a $LOGFILE
 
+# Depending on $accessTYPE, finish up the steps
+#   > 'lvmblock' we are done
+#   > 'lvmxfs' then mkfs and mount
+if [ "$accessTYPE" = "lvmxfs" ]; then
 # Step 8: mkfs and mount cmds for cachedLV
 # Using mkfs & mount syntax to match RHCS OSD procedures
-yes | mkfs.xfs -f -i size=2048 -q ${cachedLVPATH} || \
-  error_exit "$LINENO: Unable to mkfs.xfs ${cachedLVPATH}"
-if [ ! -d ${cachedMNT} ]; then
-  mkdir ${cachedMNT} || error_exit "$LINENO: Unable to mkdir ${cachedMNT}"
+  yes | mkfs.xfs -f -i size=2048 -q ${cachedLVPATH} || \
+    error_exit "$LINENO: Unable to mkfs.xfs ${cachedLVPATH}"
+  if [ ! -d ${cachedMNT} ]; then
+    mkdir ${cachedMNT} || error_exit "$LINENO: Unable to mkdir ${cachedMNT}"
+  fi
+  mount -t xfs -o rw,noatime,inode64 ${cachedLVPATH} ${cachedMNT} || \
+    error_exit "$LINENO: Unable to mount ${cachedMNT}"
+
+  touch ${cachedSCRATCH} || \
+    error_exit "$LINENO: Unable to create file ${cachedSCRATCH}"
+  rm -f ${cachedSCRATCH}
 fi
-mount -t xfs -o rw,noatime,inode64 ${cachedLVPATH} ${cachedMNT} || \
-  error_exit "$LINENO: Unable to mount ${cachedMNT}"
 
-# Step 9: list mounted filesystems
-df 2>&1 | tee -a $LOGFILE
-
-# Step 10: verify filesystem is properly created and mounted
-touch ${cachedSCRATCH} || \
-  error_exit "$LINENO: Unable to create file ${cachedSCRATCH}"
-rm -f ${cachedSCRATCH}
+#
+# END setupCACHE.sh
 
