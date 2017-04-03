@@ -54,6 +54,7 @@ updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
 updatelog "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
 updatelog "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
 updatelog "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
+updatelog "> accessTYPE=${accessTYPE}"
 updatelog "FIO variable settings:"
 updatelog "> iodepth=${iod} - read%=${percentRD}"
 updatelog "---------------------------------"
@@ -114,41 +115,17 @@ updatelog "Completed: LVM SETUP"
 #############################
 # TEST the LVM Devices
 #----------------------------------------
+# Write the test area/file with random 4M blocks
 
-updatelog "BEGIN: Write the scratch files"
-# slowDEV - create scratch file
-fio --filesize=${scratchLVM_SZ} --blocksize=4M --rw=write \
-  --ioengine=libaio --iodepth=${iod} --direct=1 \
-  --refill_buffers --fsync_on_close=1 \
-  --filename=${slowSCRATCH} --group_reporting \
-  --name=scratch_slow > /dev/null 2>&1 
-dusize1=$(du -k "${slowSCRATCH}" | cut -f 1)
-if [[ $dusize1 -lt 1 ]]; then
-  updatelog "FAILURE in writing ${slowSCRATCH}"
-  updatelog "Starting: LVM TEARDOWN"
-  source "$myPath/Utils/teardownLVM.shinc"
-  updatelog "Completed: LVM TEARDOWN"
-  exit 1
-fi
-updatelog "${slowSCRATCH} is $dusize1 KB"
+updatelog "START: Writing the scratch areas"
 
-# fastDEV - create scratch file
-fio --filesize=${scratchLVM_SZ} --blocksize=4M --rw=write \
-  --ioengine=libaio --iodepth=${iod} --direct=1 \
-  --refill_buffers --fsync_on_close=1 \
-  --filename=${fastSCRATCH} --group_reporting \
-  --name=scratch_fast > /dev/null 2>&1
-dusize2=$(du -k "${fastSCRATCH}" | cut -f 1)
-if [[ $dusize2 -lt 1 ]]; then
-  updatelog "FAILURE in writing ${fastSCRATCH}"
-  updatelog "Starting: LVM TEARDOWN"
-  source "$myPath/Utils/teardownLVM.shinc"
-  updatelog "Completed: LVM TEARDOWN"
-  exit 1
-fi
-updatelog "${fastSCRATCH} is $dusize2 KB"
+# slowDEV - create scratch 
+write_scratch $slowSCRATCH $scratchLVM_SZ
 
-updatelog "COMPLETED: Writing the scratch files"
+# fastDEV - create scratch
+write_scratch $fastSCRATCH $scratchLVM_SZ
+
+updatelog "COMPLETED: Writing the scratch areas"
 
 updatelog "Starting: LVM Device TESTING"
 
@@ -182,7 +159,7 @@ for size in "${LVMsize_arr[@]}"; do
     if [ ! -e $slowOUT ]; then
       error_exit "fio failed ${slowSCRATCH}"
     fi
-    updatelog "COMPLETED: Testing ${slowSCRATCH}"
+    updatelog "COMPLETED: Testing ${slowSCRATCH} with size ${size}"
     updatelog "SUMMARY size ${size} with blocksize ${bs}: ${slowSCRATCH}"
     fio_print $slowOUT
     echo "FIO output:" >> $LOGFILE

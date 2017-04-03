@@ -45,8 +45,9 @@ updatelog "Key variable values:"
 updatelog "> fastDEV=${fastDEV}"
 updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
 updatelog "> fastLVPATH=${fastLVPATH}"
-updatelog "> accessTYPE=${accessTYPE} fastSCRATCH=${fastSCRATCH}"
+updatelog "> fastSCRATCH=${fastSCRATCH}"
 updatelog "> randDIST=${randDIST} percentRD=${percentRD}"
+updatelog "> accessTYPE=${accessTYPE}"
 updatelog "---------------------------------"
 
 # Ensure that devices to be tested are not in use
@@ -106,28 +107,12 @@ updatelog "Completed: NVME SETUP"
 # TEST the NVME Device
 #----------------------------------------
 
-updatelog "BEGIN: Write the scratch file"
+updatelog "BEGIN: Write the scratch area"
 
-# fastDEV - create scratch file
-fio --filesize=${scratchLVM_SZ} --blocksize=4M --rw=write \
-  --ioengine=libaio --iodepth=${iod} --direct=1 \
-  --refill_buffers --fsync_on_close=1 \
-  --filename=${fastSCRATCH} --group_reporting \
-  --name=scratch_fast > /dev/null 2>&1
-# Test SCRATCH file size depending on accessTYPE
-if [ "$accessTYPE" = "lvmxfs" ]; then
-  dusize2=$(du -k "${fastSCRATCH}" | cut -f 1)
-  if [[ $dusize2 -lt 1 ]]; then
-    updatelog "FAILURE in writing ${fastSCRATCH}"
-    updatelog "Starting: LVM TEARDOWN"
-    source "$myPath/Utils/teardownLVM.shinc"
-    updatelog "Completed: LVM TEARDOWN"
-    exit 1
-  fi
-  updatelog "${fastSCRATCH} is $dusize2 KB"
-fi
+# fastDEV - create scratch area
+write_scratch $fastSCRATCH $scratchLVM_SZ
 
-updatelog "COMPLETED: Writing the scratch file"
+updatelog "COMPLETED: Writing the scratch area"
 
 updatelog "Starting: NVME Device TESTING"
 
@@ -142,7 +127,7 @@ updatelog "Starting: NVME Device TESTING"
 #       values defined in vars.shinc file
 #
 size="10G"
-IODEPTH_arr=( "8" "16" "32" "16" )
+IODEPTH_arr=( "8" "16" "16" "16" "32" )
 # iod FOR loop
 for iod in "${IODEPTH_arr[@]}"; do
 #
@@ -168,7 +153,7 @@ for iod in "${IODEPTH_arr[@]}"; do
     if [ ! -e $fastOUT ]; then
       error_exit "fio failed ${fastSCRATCH}"
     fi
-    updatelog "COMPLETED: Testing ${fastSCRATCH}"
+    updatelog "COMPLETED: Testing ${fastSCRATCH} with size ${size}"
     updatelog "SUMMARY iodepth ${iod} with blocksize ${bs}: ${fastSCRATCH}"
     fio_print $fastOUT
     echo "FIO output:" >> $LOGFILE

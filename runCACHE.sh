@@ -51,6 +51,8 @@ updatelog "> cacheSZ=${cacheSZ} - cacheMODE=${cacheMODE}"
 updatelog "> metadataSZ=${metadataSZ} - metadataLV=${cachemetaLV}"
 updatelog "> originSZ=${originSZ} - cachedLV=${originLV}"
 updatelog "> cachedLVPATH=${cachedLVPATH} - cachedMNT=${cachedMNT}"
+updatelog "> cachedSCRATCH=${cachedSCRATCH}"
+updatelog "> accessTYPE=${accessTYPE}"
 updatelog "FIO variable settings:"
 updatelog "> iodepth=${iod} - read%=${percentRD}"
 updatelog "> runtime=${runtime} - ramptime=${ramptime}"
@@ -116,29 +118,14 @@ updatelog "Completed: LVM CACHE SETUP"
 
 updatelog "Starting: LVM CACHE Device TESTING"
 # Test sequence:
-#  1) write the test file/area
+#  1) write the test scratch file/area
 #  2) warmup the cache (ramp_time)
 #  3) measure the throughput (run_time)
 
-
 # Write the test area/file with random 4M blocks
-updatelog "Writing ${scratchCACHE_SZ} scratch file to ${cachedSCRATCH}..."
-fio --size=${scratchCACHE_SZ} --blocksize=4M --rw=write \
-  --ioengine=libaio --iodepth=${iod} --direct=1 \
-  --refill_buffers --fsync_on_close=1 \
-  --filename=${cachedSCRATCH} --group_reporting \
-  --name=scratch_cache > /dev/null 2>&1
-dusize1=$(du -k "${cachedSCRATCH}" | cut -f 1)
-if [[ $dusize1 -lt 1 ]]; then
-  updatelog "FAILURE in writing ${cachedSCRATCH}"
-  updatelog "Starting: LVM CACHE TEARDOWN"
-  source "$myPath/Utils/teardownCACHE.shinc"
-  updatelog "Completed: LVM CACHE TEARDOWN"
-  exit 1
-fi
-updatelog "${cachedSCRATCH} is $dusize1 KB"
-
-updatelog "COMPLETED: Writing the scratch file"
+updatelog "START: Writing the scratch area"
+write_scratch $cachedSCRATCH $scratchCACHE_SZ
+updatelog "COMPLETED: Writing the scratch area"
 
 updatelog "Starting: LVM CACHE Device TESTING"
 
@@ -179,7 +166,7 @@ for bs in "${BLOCKsize_arr[@]}"; do
     if [ ! -e $cachedOUT ]; then
       error_exit "fio failed ${cachedSCRATCH}"
     fi
-    updatelog "COMPLETED: Testing ${cachedSCRATCH}"
+    updatelog "COMPLETED: Testing ${cachedSCRATCH} with size ${size}"
     updatelog "SUMMARY filesize ${size} with blocksize ${bs}: ${cachedSCRATCH}"
     fio_print $cachedOUT
     echo "FIO output:" >> $LOGFILE
