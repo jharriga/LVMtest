@@ -23,6 +23,37 @@ function chk_dependencies {
   done
 }
 
+function write_scratch()
+{
+# Write the test area/file with random 4M blocks
+  fiofn=$1
+  fiosize=$2
+
+  updatelog "Writing ${fiosize} scratch area to ${fiofn}..."
+  fio --size=${fiosize} --blocksize=4M --rw=write \
+    --ioengine=libaio --iodepth=${iod} --direct=1 \
+    --refill_buffers --fsync_on_close=1 \
+    --filename=${fiofn} --group_reporting \
+    --name=scratch_write > /dev/null 2>&1
+  if [ "$accessTYPE" = "lvmxfs" ]; then
+    dusize1=$(du -k "${fiofn}" | cut -f 1)
+    if [[ $dusize1 -lt 1 ]]; then
+      updatelog "FAILURE in writing ${fiofn}"
+      if [ "$fiofn" = "$cachedSCRATCH" ]; then
+        updatelog "Starting: LVM CACHE TEARDOWN"
+        source "$myPath/Utils/teardownCACHE.shinc"
+        updatelog "Completed: LVM CACHE TEARDOWN"
+      elif [ "$fiofn" = "$fastSCRATCH" ]; then
+        updatelog "Starting: LVM TEARDOWN"
+        source "$myPath/Utils/teardownLVM.shinc"
+        updatelog "Completed: LVM TEARDOWN"
+      fi
+      exit 1
+    fi
+    updatelog
+  fi
+}
+
 function fio_runt_rw() 
 {
     file=$1
