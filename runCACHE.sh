@@ -115,6 +115,9 @@ updatelog "START: Writing the scratch area"
 write_scratch $cachedSCRATCH $scratchCACHE_SZ
 updatelog "COMPLETED: Writing the scratch area"
 
+# Output lvmcache statistics before any runs
+cacheStats $cachedLVPATH
+
 #####
 # Main for loops for executing FIO tests
 # Note that the FIO output files get over-written on every run
@@ -131,9 +134,6 @@ for bs in "${BLOCKsize_arr[@]}"; do
 #
 # FileSize FOR loop
   for size in "${CACHEsize_arr[@]}"; do
-#
-# Output lvmcache statistics before each run
-    cacheStats $cachedLVPATH
 
 # Run the test on the CACHED scratch area
     cachedOUT="${RESULTSDIR}/cached_${size}_${bs}.fio"
@@ -173,16 +173,16 @@ for bs in "${BLOCKsize_arr[@]}"; do
       error_exit "fio failed ${cachedSCRATCH}"
     fi
     updatelog "COMPLETED: Testing ${cachedSCRATCH} with size ${size}"
+# Output the FIO results
     updatelog "SUMMARY filesize ${size} with blocksize ${bs}: ${cachedSCRATCH}"
     fio_print $cachedOUT
     echo "FIO output:" >> $LOGFILE
     cat ${cachedOUT} >> $LOGFILE
+# Output lvmcache statistics after each run
+    cacheStats $cachedLVPATH
   done
   updatelog "*****************************************"
 done
-#
-# Output lvmcache statistics after the final run
-cacheStats $cachedLVPATH
 
 updatelog "*****************************************"
 updatelog "Completed: LVM CACHE TESTING"
