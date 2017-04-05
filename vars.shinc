@@ -9,10 +9,8 @@ DEPENDENCIES_arr=(
 )
 
 # Access Type for testing: lvmblock or lvmxfs
-# determines location of 'SCRATCH' file 
-#   > e.g. slowLVPATH for lvmblock or slowMNT for lvmxfs
-# used in setup/teardown routines
 accessTYPE="lvmblock"
+#accessTYPE="lvmxfs"
 
 # SLOW device vars
 slowDEV=/dev/sdb
@@ -121,25 +119,29 @@ originSZ="${slowSZ}"
 #   cacheSize2=ten times cacheSize1
 #   cacheSize1=Cache size less 20%
 cache1_calc=$(($cache_size - $twenty_percent))
-#cache2_calc=$(($cache_size * 2))
-cache2_calc=$(($cache1_calc * 10))
-cacheSize1="$cache1_calc$unitSZ"; cacheSize2="$cache2_calc$unitSZ"
-CACHEsize_arr=("${cacheSize1}" "${cacheSize2}" "${cacheSize1}")
+cache2_calc=$(($cache_size * 2))
+cache3_calc=$(($cache2_calc + $ten_percent))
+cacheSize1="$cache3_calc$unitSZ"
+#cache2_calc=$(($cache1_calc * 10))
+#cacheSize1="$cache1_calc$unitSZ"; cacheSize2="$cache2_calc$unitSZ"
+CACHEsize_arr=("${cacheSize1}" "${cacheSize1}" "${cacheSize1}")
 #
 # Size of scratch file created by fio in runCACHE.sh
 # pad it a bit so we don't overrun the end
-scratchCACHE_calc=$(($cache2_calc + $cache1_calc))
+#scratchCACHE_calc=$(($cache2_calc + $cache1_calc))
+scratchCACHE_calc=$(($cache2_calc + $twenty_percent))
 scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 
 # FIO Variables
-fioOP="randrw"
+#fioOP="randrw"
+fioOP="read"
 percentRD="100"
 #BLOCKsize_arr=("4k" "64k" "4M")
-BLOCKsize_arr=("4M")
+BLOCKsize_arr=("64k" "4M")
 iod="16"
 # runtime and ramptime are only used by runCACHE.sh
-runtime="600"
-ramptime="600"
+runtime="300"
+ramptime="300"
 # randDIST is only used by runCACHE.sh
 # valid values are 'random' (fio default) or 'zipf:<theta>'
 # For 'zipf', use the fio/t/fio_genzip tool to visualize the distribution

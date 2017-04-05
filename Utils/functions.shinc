@@ -6,8 +6,47 @@ function updatelog {
     echo `$DATE`": $1" 2>&1 | tee -a $LOGFILE
 }
 
-function error_exit
-{
+function print_Runtime {
+  if [ $# -ne 0 ]; then
+    mode=$1
+  else
+    echo "WARNING: no argument passed to function, mode = LVMdevice"
+    mode="LVMdevice"
+  fi
+  echo "Runtime Environment:" | tee -a $LOGFILE
+  echo -n "> "; uname -a | tee -a $LOGFILE
+  if [ -f /etc/redhat-release ]; then
+    echo -n "> "; cat /etc/redhat-release | tee -a $LOGFILE
+  fi
+  echo -n "> "; lvcreate --version | tee -a $LOGFILE
+  echo -n "> "; mkfs.xfs -V | tee -a $LOGFILE
+  echo -n "> "; fio --version | tee -a $LOGFILE
+
+# Write key variable values to LOGFILE
+  echo "Key Variable Values:" | tee -a $LOGFILE
+  updatelog "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
+  if [ "$mode" = "LVMcache" ]; then
+    updatelog "> cacheSZ=${cacheSZ} - cacheMODE=${cacheMODE}"
+    updatelog "> metadataSZ=${metadataSZ} - metadataLV=${cachemetaLV}"
+    updatelog "> originSZ=${originSZ} - cachedLV=${originLV}"
+    updatelog "> cachedLVPATH=${cachedLVPATH} - cachedMNT=${cachedMNT}"
+    updatelog "> cachedSCRATCH=${cachedSCRATCH}"
+  else
+    updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
+    updatelog "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
+    updatelog "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
+    updatelog "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
+    updatelog "> slowMNT=${slowMNT} - fastMNT=${fastMNT}"
+  fi
+  updatelog "> accessTYPE=${accessTYPE}"
+  echo "FIO variable settings:" | tee -a $LOGFILE
+  updatelog "> fioOP=${fioOP} - read%=${percentRD}"
+  updatelog "> randDIST=${randDIST} iodepth=${iod}"
+  updatelog "> runtime=${runtime} - ramptime=${ramptime}"
+  updatelog "---------------------------------"
+}
+
+function error_exit {
 # Function for exit due to fatal program error
 # Accepts 1 argument:
 #   string containing descriptive error message
@@ -23,8 +62,7 @@ function chk_dependencies {
   done
 }
 
-function write_scratch()
-{
+function write_scratch {
 # Write the test area/file with random 4M blocks
   fiofn=$1
   fiosize=$2
@@ -54,15 +92,80 @@ function write_scratch()
   fi
 }
 
-function fio_runt_rw() 
-{
+function cacheStats {
+# First parameter is device to be inspected
+  LVCACHED=$1
+
+  RESULT=$(dmsetup status ${LVCACHED})
+  if [ $? -ne 0 ]; then
+    echo "[ERROR] Unable to access <${LVCACHED}>!"
+  fi
+
+  IFS=' ' read -a RESULTS <<< "${RESULT}"
+#
+# CachePolicy = MQ Format
+#   0 3892379648 cache 8 5204/393216 128 1228751/1740800 16000290 \
+#   96139299 7608331 58288757 0 367718 0 1 writeback 2 migration_threshold \
+#   2048 mq 10 random_threshold 4 sequential_threshold 512 \
+#   discard_promote_adjustment 1 read_promote_adjustment 4 \
+#   write_promote_adjustment 8 rw -
+#
+# CachePolicy = SMQ Format
+#   0 3892379648 cache 8 5204/393216 128 1694509/1740800 16064464 \
+#   96291237 8382251 58523837 0 0 5 1 writeback 2 \
+#   migration_threshold 2048 smq 0 rw -
+#
+  MetadataBlockSize="${RESULTS[3]}"
+  NrUsedMetadataBlocks="${RESULTS[4]%%/*}"
+  NrTotalMetadataBlocks="${RESULTS[4]##*/}"
+
+  CacheBlockSize="${RESULTS[5]}"
+  NrUsedCacheBlocks="${RESULTS[6]%%/*}"
+  NrTotalCacheBlocks="${RESULTS[6]##*/}"
+
+  NrReadHits="${RESULTS[7]}"
+  NrReadMisses="${RESULTS[8]}"
+  NrWriteHits="${RESULTS[9]}"
+  NrWriteMisses="${RESULTS[10]}"
+
+  NrDemotions="${RESULTS[11]}"
+  NrPromotions="${RESULTS[12]}"
+  NrDirty="${RESULTS[13]}"
+
+#
+# Output
+  echo "** LVM-CACHE STATISTICS **" | tee -a $LOGFILE
+  lvs -o \
+    cache_total_blocks,cache_used_blocks,cache_read_hits,cache_read_misses \
+    ${cacheVG} | tee -a $LOGFILE
+
+  MetaUsage=$( echo "scale=1; \
+    ($NrUsedMetadataBlocks * 100) / $NrTotalMetadataBlocks" | bc)
+  CacheUsage=$( echo "scale=1; \
+    ($NrUsedCacheBlocks * 100) / $NrTotalCacheBlocks" | bc)
+  echo "> Cache Usage: ${CacheUsage}% - Metadata Usage: ${MetaUsage}%" \
+    | tee -a $LOGFILE
+
+  ReadRate=$( echo "scale=1; \
+    ($NrReadHits * 100) / ($NrReadMisses + $NrReadHits)" | bc)
+  WriteRate=$( echo "scale=1; \
+    ($NrWriteHits * 100) / ($NrWriteMisses + $NrWriteHits)" | bc)
+  echo "> Read Hit Rate: ${ReadRate}% - Write Hit Rate: ${WriteRate}%" \
+    | tee -a $LOGFILE
+  echo "> Demotions/Promotions/Dirty: \
+    ${NrDemotions}/${NrPromotions}/${NrDirty}" | tee -a $LOGFILE
+}
+#### END cacheStats Function 
+
+########################################################
+# FIO_PRINT functions
+function fio_runt_rw {
     file=$1
     runt_read=`grep "runt=" "$file" | grep read | awk -F[=,]+ '{print $8}'`
     runtime_rw="$runt_read"
 }
 
-function fio_bw_rw() 
-{
+function fio_bw_rw {
     file=$1
     # unit:KB/S
 #    bw_read=`grep "bw=" "$file" | grep read | awk -F[=,B]+ '{if(match($4, /[0-9]+K$/)) {printf("%d", substr($4, 0, length($4)-1));} else {printf("%d", int($4)/1024)}}'`
@@ -75,8 +178,7 @@ function fio_bw_rw()
     bw_rw_write="$bw_write"
 }
 
-function fio_iops_rw() 
-{
+function fio_iops_rw {
     file=$1
     iops_read=`grep "iops=" "$file" | grep read | awk -F[=,]+ '{print $6}'`
     iops_write=`grep "iops=" "$file" | grep write | awk -F[=,]+ '{print $6}'`
@@ -84,8 +186,7 @@ function fio_iops_rw()
     iops_rw_write="$iops_write"
 }
 
-function fio_lat_rw() 
-{
+function fio_lat_rw {
     file=$1
     # unit:ms
     line=`grep "read" "$file" -A3 | grep "avg" | grep -v -E "clat|slat"`
@@ -97,8 +198,7 @@ function fio_lat_rw()
     lat_rw_write="$lat_write"
 }
 
-function fio_print()
-{
+function fio_print {
   fio_output=$1
 # grep the FIO output file and fill the strings
   fio_runt_rw $fio_output
@@ -114,7 +214,6 @@ function fio_print()
   echo -n "> WRITE: [bw] ${bw_rw_write}"   | tee -a $LOGFILE
   echo -n "  -  [iops] ${iops_rw_write}"   | tee -a $LOGFILE
   echo "  -  [avg lat] ${lat_rw_write} ms" | tee -a $LOGFILE
-
 }
 
 #

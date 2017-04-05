@@ -44,20 +44,8 @@ fi
 touch $LOGFILE || error_exit "$LINENO: Unable to create LOGFILE."
 updatelog "${PROGNAME} - Created logfile: $LOGFILE"
 
-# Write key variable values to LOGFILE
-updatelog "Key variable values:"
-updatelog "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
-updatelog "> cacheSZ=${cacheSZ} - cacheMODE=${cacheMODE}"
-updatelog "> metadataSZ=${metadataSZ} - metadataLV=${cachemetaLV}"
-updatelog "> originSZ=${originSZ} - cachedLV=${originLV}"
-updatelog "> cachedLVPATH=${cachedLVPATH} - cachedMNT=${cachedMNT}"
-updatelog "> cachedSCRATCH=${cachedSCRATCH}"
-updatelog "> accessTYPE=${accessTYPE}"
-updatelog "FIO variable settings:"
-updatelog "> fioOP=${fioOP} - read%=${percentRD}"
-updatelog "> randDIST=${randDIST} iodepth=${iod}"
-updatelog "> runtime=${runtime} - ramptime=${ramptime}"
-updatelog "---------------------------------"
+# Record runtime versions and key variable values to LOGFILE
+print_Runtime LVMcache
 
 # Ensure that devices to be tested are not in use
 # First check LVM vol groups
@@ -127,8 +115,6 @@ updatelog "START: Writing the scratch area"
 write_scratch $cachedSCRATCH $scratchCACHE_SZ
 updatelog "COMPLETED: Writing the scratch area"
 
-updatelog "Starting: LVM CACHE Device TESTING"
-
 #####
 # Main for loops for executing FIO tests
 # Note that the FIO output files get over-written on every run
@@ -139,25 +125,44 @@ updatelog "Starting: LVM CACHE Device TESTING"
 for bs in "${BLOCKsize_arr[@]}"; do
 #
   updatelog "*****************************************"
+# loop counter - used to determine offset for fio
+  let loopcntr=0
+
 #
 # FileSize FOR loop
   for size in "${CACHEsize_arr[@]}"; do
 #
+# Output lvmcache statistics before each run
+    cacheStats $cachedLVPATH
+
 # Run the test on the CACHED scratch area
     cachedOUT="${RESULTSDIR}/cached_${size}_${bs}.fio"
     if [ -e $cachedOUT ]; then
       rm -f $cachedOUT
     fi
+    updatelog "-----------------------"
     updatelog "RUNNING filesize ${size} with blocksize ${bs}: ${cachedSCRATCH}"
 
 # Clear the inode and dentry caches
 # With directIO this should not matter
-  sync; echo 3 > /proc/sys/vm/drop_caches
+    sync; echo 3 > /proc/sys/vm/drop_caches
+
+# Set the 'offset' based on loop counter
+# increases by $cache_size on every iteration
+    offcalc=$((loopcntr*cache_size))
+    offset="$offcalc$unitSZ"
+    sz_no_units=${size::-1}
+    areacalc=$((sz_no_units - offcalc))
+    area="$areacalc$unitSZ" 
+    echo ">> applying OFFSET: ${offset}"
+    echo ">> Testing with filesize: ${size} - ${offset} = ${area}"
+# Prepare loocntr value for next loop iteration
+    loopcntr=$((loopcntr+1))
 
 # Warmup the cache (ramp_time) and measure the performance (run_time)
 #
     updatelog "Warming up the cache and measuring performance..."
-    fio --filesize=${size} --blocksize=${bs} \
+    fio --offset=${offset} --filesize=${size} --blocksize=${bs} \
     --rw=${fioOP} --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
@@ -172,11 +177,14 @@ for bs in "${BLOCKsize_arr[@]}"; do
     fio_print $cachedOUT
     echo "FIO output:" >> $LOGFILE
     cat ${cachedOUT} >> $LOGFILE
-    updatelog "-----------------------"
   done
   updatelog "*****************************************"
 done
+#
+# Output lvmcache statistics after the final run
+cacheStats $cachedLVPATH
 
+updatelog "*****************************************"
 updatelog "Completed: LVM CACHE TESTING"
 
 ##############################
