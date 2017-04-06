@@ -81,7 +81,9 @@ fi
 ## Continue defining the 'SZ' vars used by the scripts
 #
 
-# runLVM.sh SIZE Variables ---------------------
+# runLVM.sh and runNVME.sh SIZE Variables ---------------------
+#   - runLVM.sh tests both the slowDEV and fastDEV
+#   - runNVME.sh tests only the fastDEV
 #
 # Size of the fastDEV used by lvcreate in Utils/setupLVM.shinc
 #   roundup by 20%

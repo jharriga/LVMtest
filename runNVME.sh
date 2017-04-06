@@ -115,7 +115,8 @@ updatelog "Starting: NVME Device TESTING"
 #   but the output is logged in $LOGFILE
 # Summary information is added to $LOGFILE by 'fio_print' function 
 #
-size="${cache_size}"
+size="${cacheSZ}"
+
 # iod FOR loop
 for iod in "${IODEPTH_arr[@]}"; do
 #
