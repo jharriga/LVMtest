@@ -1,6 +1,6 @@
 #!/bin/bash
 #----------------------------------------------------------------
-# runLVM.sh - test lvm device performance
+# runLVM.sh - test lvm device performance (non-cached)
 #
 # DEPENDENCIES: (must be in search path)
 #   I/O workload generator: fio
@@ -47,18 +47,8 @@ fi
 touch $LOGFILE || error_exit "$LINENO: Unable to create LOGFILE."
 updatelog "${PROGNAME} - Created logfile: $LOGFILE"
 
-# Write key variable values to LOGFILE
-updatelog "Key variable values:"
-updatelog "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
-updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
-updatelog "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
-updatelog "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
-updatelog "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
-updatelog "> accessTYPE=${accessTYPE}"
-updatelog "FIO variable settings:"
-updatelog "> fioOP=${fioOP} - read%=${percentRD}"
-updatelog "> randDIST=${randDIST} iodepth=${iod}"
-updatelog "---------------------------------"
+# Write runtime env and key variable values to LOGFILE
+print_Runtime LVMdevice
 
 # Ensure that devices to be tested are not in use
 # First check LVM vol groups
@@ -102,7 +92,7 @@ updatelog "Device checks complete - continuing..."
 #--------------------------------------
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# LVM TEST SECTION - Section one of two
+# LVM TEST SECTION 
 ############################
 # SETUP for LVM Test
 # based on:
@@ -116,7 +106,7 @@ updatelog "Completed: LVM SETUP"
 #############################
 # TEST the LVM Devices
 #----------------------------------------
-# Write the test area/file with random 4M blocks
+# Write the test area/file
 
 updatelog "START: Writing the scratch areas"
 
@@ -131,7 +121,7 @@ updatelog "COMPLETED: Writing the scratch areas"
 updatelog "Starting: LVM Device TESTING"
 
 #####
-# Main for loops for executing FIO tests
+# Main FOR loops for executing FIO tests
 # Note that the FIO output files get over-written on every run
 #   but the output is logged in $LOGFILE
 # Summary information is added to $LOGFILE by 'fio_print' function 
@@ -176,7 +166,7 @@ for size in "${LVMsize_arr[@]}"; do
 
     sync; echo 3 > /proc/sys/vm/drop_caches
     fio --size=${size} --blocksize=${bs} \
-    --rw=randrw --rwmixread=${percentRD} --random_distribution=zipf:1.2 \
+    --rw=${fioOP} --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
     --filename=${fastSCRATCH} --group_reporting \
@@ -197,10 +187,6 @@ updatelog "Completed: LVM Device TESTING"
 
 ##############################
 # TEARDOWN LVM configuration
-#  - umount the LVs
-#  - Remove the two LVs
-#  - Remove the two VGs
-#  - Remove the two PVs
 updatelog "Starting: LVM TEARDOWN"
 
 source "$myPath/Utils/teardownLVM.shinc"

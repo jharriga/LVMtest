@@ -1,6 +1,6 @@
 #!/bin/bash
 #----------------------------------------------------------------
-# runNVME.sh - test NVME device performance
+# runNVME.sh - test NVME device performance (non-cached)
 #
 # DEPENDENCIES: (must be in search path)
 #   I/O workload generator: fio
@@ -40,18 +40,8 @@ fi
 touch $LOGFILE || error_exit "$LINENO: Unable to create LOGFILE."
 updatelog "${PROGNAME} - Created logfile: $LOGFILE"
 
-# Write key variable values to LOGFILE
-updatelog "Key variable values:"
-updatelog "> fastDEV=${fastDEV}"
-updatelog "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
-updatelog "> fastLVPATH=${fastLVPATH}"
-updatelog "> fastSCRATCH=${fastSCRATCH}"
-updatelog "> accessTYPE=${accessTYPE}"
-updatelog "FIO variable settings:"
-updatelog "> fioOP=${fioOP} - read%=${percentRD}"
-updatelog "> randDIST=${randDIST} iodepth=${iod}"
-updatelog "> runtime=${runtime} - ramptime=${ramptime}"
-updatelog "---------------------------------"
+# Write runtime environment and key variable values to LOGFILE
+print_Runtime LVMdevice
 
 # Ensure that devices to be tested are not in use
 # First check LVM vol groups
@@ -95,7 +85,7 @@ updatelog "Device checks complete - continuing..."
 #--------------------------------------
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# LVM TEST SECTION - Section one of two
+# LVM TEST SECTION 
 ############################
 # SETUP for LVM Test
 # based on:
@@ -125,12 +115,7 @@ updatelog "Starting: NVME Device TESTING"
 #   but the output is logged in $LOGFILE
 # Summary information is added to $LOGFILE by 'fio_print' function 
 #
-#
-# NOTE: this script defines local arrays rather than using the
-#       values defined in vars.shinc file
-#
-size="10G"
-IODEPTH_arr=( "8" "16" "16" "16" "32" )
+size="${cache_size}"
 # iod FOR loop
 for iod in "${IODEPTH_arr[@]}"; do
 #
@@ -169,10 +154,6 @@ updatelog "Completed: NVME Device TESTING"
 
 ##############################
 # TEARDOWN LVM configuration
-#  - umount the LVs
-#  - Remove the two LVs
-#  - Remove the two VGs
-#  - Remove the two PVs
 updatelog "Starting: LVM TEARDOWN"
 
 source "$myPath/Utils/teardownLVM.shinc"

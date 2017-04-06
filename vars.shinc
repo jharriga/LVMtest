@@ -3,15 +3,19 @@
 #
 # List of dependencies - verfied by 'chk_dependencies' function
 DEPENDENCIES_arr=(
-  "fio"                  # I/O workload genarator
+  "fio"                  # I/O workload generator
   "parted" "fdisk"       # partition tools
   "pvs" "lvs" "pvcreate" "vgcreate" "lvcreate"  # LVM utils
+  "dmsetup" "bc"         # function cacheStats
 )
 
 # Access Type for testing: lvmblock or lvmxfs
 accessTYPE="lvmblock"
 #accessTYPE="lvmxfs"
 
+########################################################### 
+# DEVICE vars
+#
 # SLOW device vars
 slowDEV=/dev/sdb
 #slowDEV=/dev/sdc
@@ -28,7 +32,7 @@ fastLV="lv_fast"
 fastLVPATH="/dev/${fastVG}/${fastLV}"
 fastMNT="/mnt/fastdev"
 
-# LVMcache vars
+# LVMcached device vars
 cacheVG="vg_cache"
 cachedataLV="lv_cache_data"
 cachemetaLV="lv_cache_meta"
@@ -53,7 +57,7 @@ else
   exit 1
 fi
 
-# 
+########################################################### 
 # Calculate the SIZEs, all based on unitSZ and cache_size values
 # cache_size sets the LVMcache_data size
 unitSZ="G"
@@ -77,7 +81,7 @@ fi
 ## Continue defining the 'SZ' vars used by the scripts
 #
 
-# runLVM.sh Variables ---------------------
+# runLVM.sh SIZE Variables ---------------------
 #
 # Size of the fastDEV used by lvcreate in Utils/setupLVM.shinc
 #   roundup by 20%
@@ -103,7 +107,7 @@ LVMsize_arr=("${lvmSize1}" "${lvmSize2}")
 scratchLVM_calc=$(($cache_size + $ten_percent))
 scratchLVM_SZ="$scratchLVM_calc$unitSZ"
 
-# runCACHE.sh Variables ---------------------
+# runCACHE.sh SIZE Variables ---------------------
 #
 # LVMcache_metadata size is one tenth size of LVMcache_data
 #   used by lvconvert in Utils/setupCACHE.shinc
@@ -132,6 +136,7 @@ CACHEsize_arr=("${cacheSize1}" "${cacheSize1}" "${cacheSize1}")
 scratchCACHE_calc=$(($cache2_calc + $twenty_percent))
 scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 
+########################################################### 
 # FIO Variables
 #fioOP="randrw"
 fioOP="read"
@@ -149,6 +154,9 @@ ramptime="300"
 #randDIST="random"
 randDIST="zipf:0.8"
 
+# IODEPTH_arr is only used by runNVME.sh
+IODEPTH_arr=( "8" "16" "16" "16" "32" )
+
 # Results strings used in 'fio_*' functions
 bw_rw_read=""
 iops_rw_read=""
@@ -157,6 +165,10 @@ bw_rw_write=""
 iops_rw_write=""
 lat_rw_write=""
 
+
+########################################################### 
+# HOUSEKEEPING vars
+#
 # Timestamp logfile
 ts="$(date +%Y%m%d-%H%M%S)"
 # Name of the program being run
@@ -167,21 +179,6 @@ LOGFILE="${RESULTSDIR}/${PROGNAME}_${ts}.log"
 # Logfile date format, customize it to your wishes
 #   - see man date for help
 DATE='date +%Y/%m/%d:%H:%M:%S'
-
-#
-## DEBUG
-#echo "runLVM.sh vars:"
-#echo "> slowDEV=${slowDEV} - fastDEV=${fastDEV}"
-#echo "> fastSZ=${fastSZ} - fastLV=${fastLV} - fastVG=${fastVG}"
-#echo "> slowSZ=${slowSZ} - slowLV=${slowLV} - slowVG=${slowVG}"
-#echo "> slowLVPATH=${slowLVPATH} - fastLVPATH=${fastLVPATH}"
-#echo "> slowSCRATCH=${slowSCRATCH} - fastSCRATCH=${fastSCRATCH}"
-#echo "> scratchLVM_SZ=${scratchLVM_SZ}"
-#echo "runCACHE.sh vars:"
-#echo "> cacheSZ=${cacheSZ} metadataSZ=${metadataSZ} originSZ=${originSZ}"
-#echo "> cachedSCRATCH=${cachedSCRATCH}"
-#echo "> scratchCACHE_SZ=${scratchCACHE_SZ}"
-#exit
 
 # END GLOBAL VARIABLES
 #--------------------------------------

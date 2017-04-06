@@ -10,7 +10,7 @@ function print_Runtime {
   if [ $# -ne 0 ]; then
     mode=$1
   else
-    echo "WARNING: no argument passed to function, mode = LVMdevice"
+    echo "WARNING: no argument passed to print_Runtime, mode = LVMdevice"
     mode="LVMdevice"
   fi
   echo "Runtime Environment:" | tee -a $LOGFILE
