@@ -116,6 +116,8 @@ write_scratch $cachedSCRATCH $scratchCACHE_SZ
 updatelog "COMPLETED: Writing the scratch area"
 
 # Output lvmcache statistics before any runs
+# this call should not emit any delta values since
+# it is the first call to the function
 cacheStats $cachedLVPATH
 
 #####
@@ -130,6 +132,10 @@ for bs in "${BLOCKsize_arr[@]}"; do
   updatelog "*****************************************"
 # loop counter - used to determine offset for fio
   let loopcntr=0
+
+# Hard-code these arrays locally for testing
+CACHEsize_arr=("10G" "21G" "27G" "29G")
+declare -ia OFFSET_arr=(0 11 22 28)
 
 #
 # FileSize FOR loop
@@ -149,19 +155,24 @@ for bs in "${BLOCKsize_arr[@]}"; do
 
 # Set the 'offset' based on loop counter
 # increases by $cache_size on every iteration
-    offcalc=$((loopcntr*cache_size))
+#    offcalc=$((loopcntr*cache_size))
+#
+    offcalc=${OFFSET_arr[loopcntr]}
     offset="$offcalc$unitSZ"
-    sz_no_units=${size::-1}
-    areacalc=$((sz_no_units - offcalc))
+    sizecalc=${size::-1}
+    areacalc=$((sizecalc - offcalc))
     area="$areacalc$unitSZ" 
-    echo ">> applying OFFSET: ${offset}"
-    echo ">> Testing with filesize: ${size} - ${offset} = ${area}"
+# Print out the values (with units)
+    echo -n ">> Test settings: FILESIZE = ${size} | OFFSET = ${offset}"
+    echo " | TEST-AREA = ${area}"
+    echo ">> Range within scratch area is: ${offset} --> ${size}"
+
 # Prepare loocntr value for next loop iteration
-    loopcntr=$((loopcntr+1))
+    loopcntr=$((loopcntr + 1))
 
 # Warmup the cache (ramp_time) and measure the performance (run_time)
 #
-    updatelog "Warming up the cache and measuring performance..."
+    updatelog "Warming up the cache and then measuring performance..."
     fio --offset=${offset} --filesize=${size} --blocksize=${bs} \
     --rw=${fioOP} --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
@@ -179,6 +190,7 @@ for bs in "${BLOCKsize_arr[@]}"; do
     echo "FIO output:" >> $LOGFILE
     cat ${cachedOUT} >> $LOGFILE
 # Output lvmcache statistics after each run
+# these calls should emit delta values
     cacheStats $cachedLVPATH
   done
   updatelog "*****************************************"

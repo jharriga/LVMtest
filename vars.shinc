@@ -102,6 +102,7 @@ lvm1_calc=$(($cache_size / 10))
 lvm2_calc=$cache_size
 lvmSize1="$lvm1_calc$unitSZ"; lvmSize2="$lvm2_calc$unitSZ"
 LVMsize_arr=("${lvmSize1}" "${lvmSize2}")
+#LVMsize_arr=("${lvmSize2}" "${lvmSize2}")
 #
 # Size of scratch file created by fio in runLVM.sh
 #   equal to cache size plus 10%
@@ -125,7 +126,7 @@ originSZ="${slowSZ}"
 #   cacheSize2=ten times cacheSize1
 #   cacheSize1=Cache size less 20%
 cache1_calc=$(($cache_size - $twenty_percent))
-cache2_calc=$(($cache_size * 2))
+cache2_calc=$(($cache_size * 3))
 cache3_calc=$(($cache2_calc + $ten_percent))
 cacheSize1="$cache3_calc$unitSZ"
 #cache2_calc=$(($cache1_calc * 10))
@@ -143,8 +144,8 @@ scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 #fioOP="randrw"
 fioOP="read"
 percentRD="100"
-#BLOCKsize_arr=("4k" "64k" "4M")
 BLOCKsize_arr=("64k" "4M")
+#BLOCKsize_arr=("64k" "64k" "64k" "4M" "4M" "4M")
 iod="16"
 # runtime and ramptime are only used by runCACHE.sh
 runtime="300"
@@ -167,6 +168,11 @@ bw_rw_write=""
 iops_rw_write=""
 lat_rw_write=""
 
+# Array used in cacheStats function
+# Stores cache stats from last call - used to calculate deltas
+# for 'Demotions, Promotions, Dirty'
+# initialize as empty integer array, used in runCACHE.sh
+declare -ia lastCS_arr=()
 
 ########################################################### 
 # HOUSEKEEPING vars
