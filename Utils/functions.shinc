@@ -135,9 +135,9 @@ function cacheStats {
 #
 # Output
   echo "** LVM-CACHE STATISTICS **" | tee -a $LOGFILE
-  lvs -o \
-    cache_total_blocks,cache_used_blocks,cache_read_hits,cache_read_misses \
-    ${cacheVG} | tee -a $LOGFILE
+#  lvs -o \
+#    cache_total_blocks,cache_used_blocks,cache_read_hits,cache_read_misses \
+#    ${cacheVG} | tee -a $LOGFILE
 
   MetaUsage=$( echo "scale=1; \
     ($NrUsedMetadataBlocks * 100) / $NrTotalMetadataBlocks" | bc)
@@ -152,24 +152,40 @@ function cacheStats {
     ($NrWriteHits * 100) / ($NrWriteMisses + $NrWriteHits)" | bc)
   echo "> Read Hit Rate: ${ReadRate}% - Write Hit Rate: ${WriteRate}%" \
     | tee -a $LOGFILE
+  echo -n "> Demotions/Promotions/Dirty: "
+  echo "${NrDemotions}/${NrPromotions}/${NrDirty}" | tee -a $LOGFILE
+
 #
 #  Calculate and print deltas
 # 'lastCS_arr' is initialized with zeros in vars.shinc
   if [ ${#lastCS_arr[@]} -ne 0 ]; then
-    delta_demotions=$((NrDemotions - lastCS_arr[0]))
-    delta_promotions=$((NrPromotions - lastCS_arr[1]))
-    delta_dirty=$((NrDirty - lastCS_arr[2]))
-    echo "> DELTA Demotions/Promotions/Dirty: \
-      ${delta_demotions}/${delta_promotions}/${delta_dirty}" | tee -a $LOGFILE
+    delta_readhits=$((NrReadHits - lastCS_arr[0]))
+    delta_readmisses=$((NrReadMisses - lastCS_arr[1]))
+    echo -n "> DELTA Read Hits/Read Misses: "
+    echo "${delta_readhits}/${delta_readmisses}" | tee -a $LOGFILE
+
+    delta_writehits=$((NrWriteHits - lastCS_arr[2]))
+    delta_writemisses=$((NrWriteMisses - lastCS_arr[3]))
+    echo -n "> DELTA Write Hits/Write Misses: "
+    echo "${delta_writehits}/${delta_writemisses}" | tee -a $LOGFILE
+
+    delta_demotions=$((NrDemotions - lastCS_arr[4]))
+    delta_promotions=$((NrPromotions - lastCS_arr[5]))
+    delta_dirty=$((NrDirty - lastCS_arr[6]))
+    echo -n "> DELTA Demotions/Promotions/Dirty: "
+    echo "${delta_demotions}/${delta_promotions}/${delta_dirty}" | \
+      tee -a $LOGFILE
   fi
-    echo "> TOTAL Demotions/Promotions/Dirty: \
-      ${NrDemotions}/${NrPromotions}/${NrDirty}" | tee -a $LOGFILE
 
 # Store current cache stats for next call to this function
 # - used in calculating DELTA's
-  lastCS_arr[0]=$NrDemotions
-  lastCS_arr[1]=$NrPromotions
-  lastCS_arr[2]=$NrDirty
+  lastCS_arr[0]=$NrReadHits
+  lastCS_arr[1]=$NrReadMisses
+  lastCS_arr[2]=$NrWriteHits
+  lastCS_arr[3]=$NrWriteMisses
+  lastCS_arr[4]=$NrDemotions
+  lastCS_arr[5]=$NrPromotions
+  lastCS_arr[6]=$NrDirty
 
 }
 #### END cacheStats Function 
