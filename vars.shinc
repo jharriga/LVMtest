@@ -126,10 +126,10 @@ originSZ="${slowSZ}"
 #   cacheSize2=ten times cacheSize1
 #   cacheSize1=Cache size less 20%
 cache1_calc=$(($cache_size - $twenty_percent))
-cache2_calc=$(($cache_size * 3))
+#cache2_calc=$(($cache_size * 3))
+cache2_calc=$(($cache1_calc * 10))
 cache3_calc=$(($cache2_calc + $ten_percent))
 cacheSize1="$cache3_calc$unitSZ"
-#cache2_calc=$(($cache1_calc * 10))
 #cacheSize1="$cache1_calc$unitSZ"; cacheSize2="$cache2_calc$unitSZ"
 CACHEsize_arr=("${cacheSize1}" "${cacheSize1}" "${cacheSize1}")
 #
@@ -141,10 +141,10 @@ scratchCACHE_SZ="$scratchCACHE_calc$unitSZ"
 
 ########################################################### 
 # FIO Variables
-#fioOP="randrw"
-fioOP="read"
+fioOP="randrw"
+#fioOP="read"
 percentRD="100"
-BLOCKsize_arr=("64k" "4M")
+BLOCKsize_arr=("4M")
 #BLOCKsize_arr=("64k" "64k" "64k" "4M" "4M" "4M")
 iod="16"
 # runtime and ramptime are only used by runCACHE.sh
@@ -153,7 +153,7 @@ ramptime="300"
 # randDIST is only used by runCACHE.sh
 # valid values are 'random' (fio default) or 'zipf:<theta>'
 # For 'zipf', use the fio/t/fio_genzip tool to visualize the distribution
-# Example: <theta> of 0.8 distributes ~50% of hits within 10% of SCRATCH 
+# A <theta> of 0.8 distributes ~50% of hits within 10% of the space 
 #randDIST="random"
 randDIST="zipf:0.8"
 
