@@ -126,8 +126,8 @@ originSZ="${slowSZ}"
 #   cacheSize2=ten times cacheSize1
 #   cacheSize1=Cache size less 20%
 cache1_calc=$(($cache_size - $twenty_percent))
-#cache2_calc=$(($cache_size * 3))
-cache2_calc=$(($cache1_calc * 10))
+cache2_calc=$(($cache_size * 3))
+#cache2_calc=$(($cache1_calc * 10))
 cache3_calc=$(($cache2_calc + $ten_percent))
 cacheSize1="$cache3_calc$unitSZ"
 #cacheSize1="$cache1_calc$unitSZ"; cacheSize2="$cache2_calc$unitSZ"
@@ -154,8 +154,8 @@ ramptime="300"
 # valid values are 'random' (fio default) or 'zipf:<theta>'
 # For 'zipf', use the fio/t/fio_genzip tool to visualize the distribution
 # A <theta> of 0.8 distributes ~50% of hits within 10% of the space 
-#randDIST="random"
-randDIST="zipf:0.8"
+randDIST="random"
+#randDIST="zipf:0.8"
 
 # IODEPTH_arr is only used by runNVME.sh
 IODEPTH_arr=( "8" "16" "16" "16" "32" )

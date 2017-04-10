@@ -152,8 +152,8 @@ function cacheStats {
     ($NrWriteHits * 100) / ($NrWriteMisses + $NrWriteHits)" | bc)
   echo "> Read Hit Rate: ${ReadRate}% - Write Hit Rate: ${WriteRate}%" \
     | tee -a $LOGFILE
-  echo -n "> Demotions/Promotions/Dirty: "
-  echo "${NrDemotions}/${NrPromotions}/${NrDirty}" | tee -a $LOGFILE
+  echo "> Demotions/Promotions/Dirty: \
+  ${NrDemotions}/${NrPromotions}/${NrDirty}" | tee -a $LOGFILE
 
 #
 #  Calculate and print deltas
@@ -161,20 +161,19 @@ function cacheStats {
   if [ ${#lastCS_arr[@]} -ne 0 ]; then
     delta_readhits=$((NrReadHits - lastCS_arr[0]))
     delta_readmisses=$((NrReadMisses - lastCS_arr[1]))
-    echo -n "> DELTA Read Hits/Read Misses: "
-    echo "${delta_readhits}/${delta_readmisses}" | tee -a $LOGFILE
+    echo "> DELTA Read Hits/Read Misses: \
+    ${delta_readhits}/${delta_readmisses}" | tee -a $LOGFILE
 
     delta_writehits=$((NrWriteHits - lastCS_arr[2]))
     delta_writemisses=$((NrWriteMisses - lastCS_arr[3]))
-    echo -n "> DELTA Write Hits/Write Misses: "
-    echo "${delta_writehits}/${delta_writemisses}" | tee -a $LOGFILE
+    echo "> DELTA Write Hits/Write Misses: \
+    ${delta_writehits}/${delta_writemisses}" | tee -a $LOGFILE
 
     delta_demotions=$((NrDemotions - lastCS_arr[4]))
     delta_promotions=$((NrPromotions - lastCS_arr[5]))
     delta_dirty=$((NrDirty - lastCS_arr[6]))
-    echo -n "> DELTA Demotions/Promotions/Dirty: "
-    echo "${delta_demotions}/${delta_promotions}/${delta_dirty}" | \
-      tee -a $LOGFILE
+    echo "> DELTA Demotions/Promotions/Dirty: \
+    ${delta_demotions}/${delta_promotions}/${delta_dirty}" | tee -a $LOGFILE
   fi
 
 # Store current cache stats for next call to this function
