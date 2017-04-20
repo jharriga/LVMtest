@@ -137,11 +137,12 @@ for size in "${LVMsize_arr[@]}"; do
     if [ -e $slowOUT ]; then
       rm -f $slowOUT
     fi
-    updatelog "RUNNING size ${size}, blocksize ${bs}, \
+    updatelog "RUNNING runtime ${runtime} sec, blocksize ${bs}, \
       iodepth ${iod}: ${slowSCRATCH}"
 
     sync; echo 3 > /proc/sys/vm/drop_caches
-    fio --size=${size} --blocksize=${bs} \
+#    fio --size=${size} --blocksize=${bs} \
+    fio --time_based --runtime=${runtime} --blocksize=${bs} \
     --rw=${fioOP} --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
@@ -150,8 +151,8 @@ for size in "${LVMsize_arr[@]}"; do
     if [ ! -e $slowOUT ]; then
       error_exit "fio failed ${slowSCRATCH}"
     fi
-    updatelog "COMPLETED: Testing ${slowSCRATCH} with size ${size}"
-    updatelog "SUMMARY size ${size} with blocksize ${bs}: ${slowSCRATCH}"
+    updatelog "COMPLETED: Testing ${slowSCRATCH}"
+    updatelog "SUMMARY runtime ${runtime} with blocksize ${bs}: ${slowSCRATCH}"
     fio_print $slowOUT
     echo "FIO output:" >> $LOGFILE
     cat ${slowOUT} >> $LOGFILE
@@ -162,10 +163,12 @@ for size in "${LVMsize_arr[@]}"; do
     if [ -e $fastOUT ]; then
       rm -f $fastOUT
     fi
-    updatelog "RUNNING size ${size} with blocksize ${bs}: ${fastSCRATCH}"
+    updatelog "RUNNING runtime ${runtime} sec, blocksize ${bs}, \
+      iodepth ${iod}: ${fastSCRATCH}"
 
     sync; echo 3 > /proc/sys/vm/drop_caches
-    fio --size=${size} --blocksize=${bs} \
+#    fio --size=${size} --blocksize=${bs} \
+    fio --time_based --runtime=${runtime} --blocksize=${bs} \
     --rw=${fioOP} --rwmixread=${percentRD} --random_distribution=${randDIST} \
     --ioengine=libaio --iodepth=${iod} --direct=1 \
     --overwrite=0 --fsync_on_close=1 \
@@ -175,7 +178,7 @@ for size in "${LVMsize_arr[@]}"; do
       error_exit "fio failed ${fastSCRATCH}"
     fi
     updatelog "COMPLETED: Testing ${fastSCRATCH}"
-    updatelog "SUMMARY size ${size} with blocksize ${bs}: ${fastSCRATCH}"
+    updatelog "SUMMARY runtime ${runtime} with blocksize ${bs}: ${fastSCRATCH}"
     fio_print $fastOUT
     echo "FIO output:" >> $LOGFILE
     cat ${fastOUT} >> $LOGFILE
