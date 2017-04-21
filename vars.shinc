@@ -16,6 +16,11 @@ accessTYPE="lvmblock"
 ########################################################### 
 # DEVICE vars
 #
+# iCAS device vars - used in runICAS.sh
+icasSLOW="/dev/sdb"
+icasFAST="/dev/nvme0n1p1"
+icasSCRATCH="/dev/intelcas1-1"
+
 # SLOW device vars
 slowDEV=/dev/sdb
 #slowDEV=/dev/sdc
@@ -145,10 +150,12 @@ fioOP="randrw"
 #fioOP="read"
 percentRD="100"
 BLOCKsize_arr=("4M")
+#BLOCKsize_arr=("64k")
 #BLOCKsize_arr=("64k" "64k" "64k" "4M" "4M" "4M")
 iod="16"
-# runtime and ramptime are only used by runCACHE.sh
-runtime="300"
+# runtime is used by runLVM.sh, runCACHE.sh and runICAS.sh
+runtime="600"
+# ramptime is only used by runCACHE.sh
 ramptime="300"
 # randDIST is only used by runCACHE.sh
 # valid values are 'random' (fio default) or 'zipf:<theta>'
